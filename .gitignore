@@ -1,0 +1,20 @@
+# Backend
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+uvicorn_out.log
+uvicorn_err.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/vite_out.log
+
+# Editor/OS
+.vscode/
+.DS_Store
