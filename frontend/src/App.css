@@ -3244,3 +3244,133 @@ button:disabled {
     align-items: flex-start;
   }
 }
+
+/* Mi perfil */
+
+a.avatar {
+  text-decoration: none;
+}
+
+a.avatar:hover,
+a.avatar.active {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
+}
+
+.profile-page {
+  max-width: 960px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 0;
+}
+
+.profile-hero h1 {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+}
+
+.profile-hero p {
+  margin: 0;
+}
+
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 1.3rem;
+}
+
+.profile-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.profile-grid .card {
+  margin: 0;
+}
+
+.profile-grid h2,
+.danger-zone h2 {
+  margin-top: 0;
+}
+
+.profile-grid .modal-form input {
+  width: 100%;
+}
+
+.form-success {
+  margin: 0;
+  color: var(--status-good);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.danger-zone {
+  border-color: #f2c4c4;
+}
+
+.danger-zone h2 {
+  color: var(--status-critical);
+}
+
+.danger-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+}
+
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.checkbox-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--status-critical);
+}
+
+.button-danger {
+  background: var(--status-critical);
+}
+
+@media (max-width: 800px) {
+  .profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profile-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-summary .summary-item:nth-child(3) {
+    border-left: none;
+  }
+
+  .profile-summary .summary-item:nth-child(n + 3) {
+    border-top: 1px solid var(--gridline);
+  }
+}
+
+.password-field input {
+  width: 100%;
+}

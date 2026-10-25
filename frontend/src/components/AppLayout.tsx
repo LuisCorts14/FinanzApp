@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getInitials } from "../utils/user";
 import BrandLogo from "./BrandLogo";
 import {
   BellIcon,
@@ -33,19 +34,14 @@ const MAIN_LINKS = [
   { to: "/escanear", label: "Escanear boleta", icon: ScanIcon },
 ];
 
+const ACCOUNT_LINKS = [{ to: "/perfil", label: "Mi perfil", icon: UserIcon }];
+
 function readCollapsed(): boolean {
   try {
     return localStorage.getItem(COLLAPSED_STORAGE_KEY) === "1";
   } catch {
     return false;
   }
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 function SoonItem({ icon: IconComponent, label }: { icon: typeof UserIcon; label: string }) {
@@ -131,9 +127,9 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           <button type="button" className="icon-button" aria-label="Notificaciones (próximamente)" title="Próximamente">
             <BellIcon />
           </button>
-          <span className="avatar" title={displayName}>
+          <NavLink to="/perfil" className="avatar" title={`${displayName} · Mi perfil`} aria-label="Mi perfil">
             {getInitials(displayName)}
-          </span>
+          </NavLink>
         </div>
       </header>
 
@@ -157,7 +153,17 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             <hr className="sidebar-divider" />
 
             <span className="sidebar-section-title">Cuenta</span>
-            <SoonItem icon={UserIcon} label="Mi perfil" />
+            {ACCOUNT_LINKS.map(({ to, label, icon: IconComponent }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) => `sidebar-link${isActive ? " active" : ""}`}
+                title={collapsed ? label : undefined}
+              >
+                <IconComponent />
+                <span className="sidebar-link-label">{label}</span>
+              </NavLink>
+            ))}
             <SoonItem icon={SettingsIcon} label="Configuración" />
             <button
               type="button"

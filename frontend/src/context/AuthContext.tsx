@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import * as authApi from "../api/auth";
-import type { User } from "../api/auth";
+import type { TokenResponse, User } from "../api/auth";
 import { TOKEN_STORAGE_KEY } from "../api/client";
 
 interface AuthContextValue {
@@ -10,6 +10,9 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName?: string) => Promise<void>;
   logout: () => void;
+  // Para el perfil: actualizar los datos mostrados o guardar el token nuevo tras cambiar la contraseña.
+  updateUser: (user: User) => void;
+  applySession: (session: TokenResponse) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -31,16 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
+  function applySession(session: TokenResponse) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, session.access_token);
+    setUser(session.user);
+  }
+
   async function login(email: string, password: string) {
-    const res = await authApi.login(email, password);
-    localStorage.setItem(TOKEN_STORAGE_KEY, res.access_token);
-    setUser(res.user);
+    applySession(await authApi.login(email, password));
   }
 
   async function register(email: string, password: string, fullName?: string) {
-    const res = await authApi.register(email, password, fullName);
-    localStorage.setItem(TOKEN_STORAGE_KEY, res.access_token);
-    setUser(res.user);
+    applySession(await authApi.register(email, password, fullName));
   }
 
   function logout() {
@@ -49,7 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser: setUser, applySession }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 

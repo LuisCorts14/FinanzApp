@@ -39,3 +39,38 @@ export async function forgotPassword(email: string): Promise<void> {
 export async function resetPassword(token: string, newPassword: string): Promise<void> {
   await apiClient.post("/auth/reset-password", { token, new_password: newPassword });
 }
+
+export interface UserSummary {
+  accounts: number;
+  transactions: number;
+  transfers: number;
+  categories: number;
+  savings_goals: number;
+}
+
+export async function updateMe(payload: {
+  full_name?: string | null;
+  email?: string;
+  current_password?: string;
+}): Promise<User> {
+  const { data } = await apiClient.patch<User>("/auth/me", payload);
+  return data;
+}
+
+// Devuelve un token nuevo: el anterior (y el de otros dispositivos) deja de servir.
+export async function changePassword(currentPassword: string, newPassword: string): Promise<TokenResponse> {
+  const { data } = await apiClient.post<TokenResponse>("/auth/change-password", {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+  return data;
+}
+
+export async function getMySummary(): Promise<UserSummary> {
+  const { data } = await apiClient.get<UserSummary>("/auth/me/summary");
+  return data;
+}
+
+export async function deleteMyAccount(password: string): Promise<void> {
+  await apiClient.post("/auth/delete-account", { password });
+}

@@ -26,6 +26,7 @@ def get_current_user(
         raise credentials_error
 
     user = db.get(User, user_id)
-    if user is None:
+    # Tokens anteriores a un cambio de contraseña ya no sirven (los tokens antiguos sin "ver" cuentan como 0).
+    if user is None or payload.get("ver", 0) != user.token_version:
         raise credentials_error
     return user

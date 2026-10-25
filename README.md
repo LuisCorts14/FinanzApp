@@ -22,6 +22,7 @@ Mucha gente no sabe con certeza a dónde se le va el dinero cada mes. Las apps d
 - **Metas de ahorro:** abonos y retiros con historial, cuánto apartar por día, semana o mes, un indicador de ritmo ("vas al día", "vas atrasado $X") y un gráfico del ahorro real contra el plan.
 - **Reportes:** tasa de ahorro, estado de los presupuestos, gastos por categoría (barras, círculo o tabla) e ingresos vs. gastos de los últimos 12 meses.
 - **Cuentas de usuario:** registro e inicio de sesión con JWT y recuperación de contraseña por correo. Cada persona ve solo sus datos.
+- **Mi perfil:** editar nombre y email (el email pide la contraseña actual), cambiar la contraseña cerrando las sesiones de otros dispositivos, ver un resumen de tus datos y eliminar la cuenta con todo lo asociado.
 - **Multimoneda:** cuentas en USD u otras monedas, convertidas a CLP con tasas de cambio en caché.
 
 ## Capturas
@@ -109,7 +110,7 @@ Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se impr
 
 ## Tests
 
-El backend tiene una suite de **pytest** (53 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
+El backend tiene una suite de **pytest** (61 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -127,6 +128,7 @@ En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la
 - **La moneda de una cuenta con movimientos no se cambia.** Al editar, el backend rechaza un cambio de producto que implique otra moneda si la cuenta ya tiene transacciones, porque sus montos quedarían mal interpretados.
 - **Las transferencias son una entidad propia.** No se modelan como un gasto más un ingreso con categoría, sino en su propia tabla. Así nunca aparecen en reportes ni presupuestos, y borrar una revierte los saldos de ambas cuentas de una sola vez.
 - **La IA propone, la persona decide.** El escaneo de boletas usa salida estructurada (JSON Schema) y el backend no confía en lo que devuelve el modelo: descarta ids de categorías que no son de esa persona y fechas inválidas. Nada se guarda sin que la persona revise y confirme.
+- **Cambiar la contraseña invalida los tokens anteriores.** Los JWT llevan una versión que se incrementa al cambiar o recuperar la contraseña; un token viejo deja de servir aunque no haya expirado.
 - **Saldos atómicos.** El saldo se ajusta con `UPDATE ... SET balance = balance + x` en la base de datos, no leyendo y escribiendo desde Python, para no perder actualizaciones cuando llegan varias solicitudes a la vez (un test de concurrencia lo cubre).
 - **El catálogo manda.** Si una cuenta se crea desde un producto del catálogo, el backend fija el tipo y la moneda según el producto, aunque el cliente envíe otros valores. Es una lista mantenida a mano, porque no existe una API pública con los productos bancarios de Chile.
 - **Máximo 3 categorías de ingreso.** Es una decisión de producto: la mayoría de las personas tiene una o dos fuentes de ingreso, y limitar las categorías evita que se desordenen. Los gastos no tienen límite.
@@ -138,7 +140,7 @@ En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la
 
 - Tests de componentes en el frontend
 - Deploy público con una cuenta demo
-- Perfil de usuario, notificaciones y consejos personalizados en el Dashboard
+- Configuración, notificaciones y consejos personalizados en el Dashboard
 
 ## Autor
 

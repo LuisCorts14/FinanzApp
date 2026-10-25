@@ -13,6 +13,7 @@ import StatsPage from "./pages/StatsPage";
 import SavingsGoalsPage from "./pages/SavingsGoalsPage";
 import SavingsGoalDetailPage from "./pages/SavingsGoalDetailPage";
 import ScanReceiptPage from "./pages/ScanReceiptPage";
+import ProfilePage from "./pages/ProfilePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/ahorros" element={<SavingsGoalsPage />} />
           <Route path="/ahorros/:id" element={<SavingsGoalDetailPage />} />
           <Route path="/escanear" element={<ScanReceiptPage />} />
+          <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
