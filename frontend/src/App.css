@@ -2941,3 +2941,52 @@ button:disabled {
 .credit-usage-header span {
   white-space: nowrap;
 }
+
+/* Transferencias */
+
+.segmented-modal {
+  margin-bottom: 16px;
+}
+
+.segmented-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.chip-transfer {
+  background: #e6effa;
+  border-color: transparent;
+  color: #2a5ea8;
+}
+
+.amount-transfer {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.cell-sub {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.transfer-hint {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #e6effa;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.button-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-header svg {
+  width: 18px;
+  height: 18px;
+}

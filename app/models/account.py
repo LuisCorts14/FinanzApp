@@ -11,6 +11,7 @@ from app.models.enums import AccountType
 
 if TYPE_CHECKING:
     from app.models.transaction import Transaction
+    from app.models.transfer import Transfer
 
 
 class Account(Base):
@@ -30,6 +31,12 @@ class Account(Base):
 
     transactions: Mapped[list["Transaction"]] = relationship(
         back_populates="account", cascade="all, delete-orphan"
+    )
+    transfers_out: Mapped[list["Transfer"]] = relationship(
+        foreign_keys="Transfer.from_account_id", back_populates="from_account", cascade="all, delete-orphan"
+    )
+    transfers_in: Mapped[list["Transfer"]] = relationship(
+        foreign_keys="Transfer.to_account_id", back_populates="to_account", cascade="all, delete-orphan"
     )
 
     @property

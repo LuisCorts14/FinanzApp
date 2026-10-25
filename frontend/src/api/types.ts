@@ -117,3 +117,30 @@ export interface SavingsContributionCreate {
   date: string;
   note?: string | null;
 }
+
+export interface Transfer {
+  id: number;
+  from_account_id: number;
+  to_account_id: number;
+  amount: number;
+  to_amount: number;
+  description: string | null;
+  date: string;
+  created_at: string;
+}
+
+export interface TransferCreate {
+  from_account_id: number;
+  to_account_id: number;
+  amount: number;
+  to_amount?: number | null;
+  description?: string | null;
+  date: string;
+}
+
+export interface TransferUpdate {
+  amount?: number;
+  to_amount?: number | null;
+  description?: string | null;
+  date?: string;
+}

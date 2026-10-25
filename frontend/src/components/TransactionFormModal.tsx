@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { createTransaction, updateTransaction } from "../api/transactions";
-import type { Account, Category, Transaction, TransactionType } from "../api/types";
+import type { Account, Category, Transaction, TransactionType, Transfer } from "../api/types";
 import { CloseIcon } from "./Icons";
+import TransferForm from "./TransferForm";
 
 interface TransactionFormModalProps {
   accounts: Account[];
@@ -11,8 +12,12 @@ interface TransactionFormModalProps {
   onSaved: () => void;
   // Con una transacción, el modal la edita en vez de crear una nueva.
   transaction?: Transaction;
+  // Con una transferencia, el modal la edita.
+  transfer?: Transfer;
   // Deja la cuenta fija (p. ej. al abrirlo desde el detalle de una cuenta).
   fixedAccountId?: number;
+  // Abre directamente en "Transferencia" con este destino (p. ej. "Pagar tarjeta").
+  transferToAccountId?: number;
 }
 
 function todayISO(): string {
@@ -26,12 +31,15 @@ export default function TransactionFormModal({
   onClose,
   onSaved,
   transaction,
+  transfer,
   fixedAccountId,
+  transferToAccountId,
 }: TransactionFormModalProps) {
-  const isEdit = Boolean(transaction);
+  const isEdit = Boolean(transaction || transfer);
   const initialType: TransactionType = transaction?.category.type ?? "expense";
   const firstOfType = (t: TransactionType) => String(categories.find((c) => c.type === t)?.id ?? "");
 
+  const [isTransfer, setIsTransfer] = useState(Boolean(transfer || transferToAccountId));
   const [type, setType] = useState<TransactionType>(initialType);
   const [accountId, setAccountId] = useState(
     String(transaction?.account_id ?? fixedAccountId ?? accounts[0]?.id ?? ""),
@@ -59,6 +67,7 @@ export default function TransactionFormModal({
   }, [onClose]);
 
   function selectType(t: TransactionType) {
+    setIsTransfer(false);
     setType(t);
     setCategoryId(firstOfType(t));
   }
@@ -87,7 +96,22 @@ export default function TransactionFormModal({
   }
 
   const missingSetup = accounts.length === 0 || categories.length === 0;
-  const title = isEdit ? "Editar transacción" : "Nueva transacción";
+  const title = transfer
+    ? "Editar transferencia"
+    : isEdit
+      ? "Editar transacción"
+      : transferToAccountId
+        ? "Pagar tarjeta"
+        : "Nueva transacción";
+
+  // Al editar no se cambia de tipo: una transacción no se convierte en transferencia ni al revés.
+  const tabs = [
+    { key: "expense", label: "Gasto", active: !isTransfer && type === "expense", onClick: () => selectType("expense") },
+    { key: "income", label: "Ingreso", active: !isTransfer && type === "income", onClick: () => selectType("income") },
+    ...(isEdit
+      ? []
+      : [{ key: "transfer", label: "Transferencia", active: isTransfer, onClick: () => setIsTransfer(true) }]),
+  ];
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -105,7 +129,37 @@ export default function TransactionFormModal({
           </button>
         </div>
 
-        {missingSetup ? (
+        {!transfer && (
+          <div
+            className={`segmented segmented-modal${tabs.length === 3 ? " segmented-3" : ""}`}
+            role="tablist"
+            aria-label="Tipo de movimiento"
+          >
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={t.active}
+                className={t.active ? "active" : ""}
+                onClick={t.onClick}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isTransfer ? (
+          <TransferForm
+            accounts={accounts}
+            transfer={transfer}
+            defaultFromAccountId={transferToAccountId ? undefined : fixedAccountId}
+            defaultToAccountId={transferToAccountId}
+            onSaved={onSaved}
+            onCancel={onClose}
+          />
+        ) : missingSetup ? (
           <p className="modal-empty">
             {accounts.length === 0 ? (
               <>
@@ -119,27 +173,6 @@ export default function TransactionFormModal({
           </p>
         ) : (
           <form className="modal-form" onSubmit={handleSubmit}>
-            <div className="segmented" role="tablist" aria-label="Tipo de transacción">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={type === "expense"}
-                className={type === "expense" ? "active" : ""}
-                onClick={() => selectType("expense")}
-              >
-                Gasto
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={type === "income"}
-                className={type === "income" ? "active" : ""}
-                onClick={() => selectType("income")}
-              >
-                Ingreso
-              </button>
-            </div>
-
             <label>
               Monto
               <input

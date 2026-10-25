@@ -81,7 +81,8 @@ def update_account(
         _apply_catalog(data)
 
     new_currency = data.get("currency", account.currency)
-    if new_currency != account.currency and account.transactions:
+    has_movements = account.transactions or account.transfers_in or account.transfers_out
+    if new_currency != account.currency and has_movements:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No puedes cambiar la moneda de una cuenta que ya tiene movimientos",

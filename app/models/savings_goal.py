@@ -43,7 +43,7 @@ class SavingsGoal(Base):
     def start_amount(self) -> float:
         """Lo que ya había ahorrado al crear la meta: el punto de partida del plan.
 
-        Con cuenta: el balance actual menos los movimientos registrados después de crear la meta.
+        Con cuenta: el balance actual menos los movimientos y transferencias registrados después de crear la meta.
         Sin cuenta: los abonos con fecha hasta el día de creación (p. ej. "Saldo inicial").
         """
         if self.account is not None:
@@ -52,6 +52,8 @@ class SavingsGoal(Base):
                 for t in self.account.transactions
                 if t.created_at > self.created_at
             )
+            later += sum(float(t.to_amount) for t in self.account.transfers_in if t.created_at > self.created_at)
+            later -= sum(float(t.amount) for t in self.account.transfers_out if t.created_at > self.created_at)
             return round(max(float(self.account.balance) - later, 0), 2)
         created_day = self.created_at.date()
         return round(max(sum(float(c.amount) for c in self.contributions if c.date <= created_day), 0), 2)

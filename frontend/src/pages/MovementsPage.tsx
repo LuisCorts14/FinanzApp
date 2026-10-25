@@ -3,7 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { listAccounts } from "../api/accounts";
 import { listCategories } from "../api/categories";
 import { deleteTransaction, listTransactions } from "../api/transactions";
-import type { Account, Category, Transaction, TransactionType } from "../api/types";
+import { deleteTransfer, listTransfers } from "../api/transfers";
+import type { Account, Category, Transaction, TransactionType, Transfer } from "../api/types";
 import { PlusIcon } from "../components/Icons";
 import MonthPicker from "../components/MonthPicker";
 import TransactionFormModal from "../components/TransactionFormModal";
@@ -11,16 +12,18 @@ import TransactionsTable from "../components/TransactionsTable";
 import { formatCLP } from "../utils/format";
 import { getCurrentMonthKey, monthName } from "../utils/month";
 
-type Filter = "all" | TransactionType;
+type Filter = "all" | TransactionType | "transfer";
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "Todas" },
   { value: "income", label: "Ingresos" },
   { value: "expense", label: "Gastos" },
+  { value: "transfer", label: "Transferencias" },
 ];
 
 export default function MovementsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,16 +36,19 @@ export default function MovementsPage() {
 
   // null = modal cerrado; "new" = crear; una transacción = editarla.
   const [modal, setModal] = useState<"new" | Transaction | null>(null);
+  const [editingTransfer, setEditingTransfer] = useState<Transfer | null>(null);
 
   const loadData = useCallback(async () => {
     setError(null);
     try {
-      const [transactionsData, accountsData, categoriesData] = await Promise.all([
+      const [transactionsData, transfersData, accountsData, categoriesData] = await Promise.all([
         listTransactions(undefined, month),
+        listTransfers(undefined, month),
         listAccounts(),
         listCategories(),
       ]);
       setTransactions(transactionsData);
+      setTransfers(transfersData);
       setAccounts(accountsData);
       setCategories(categoriesData);
     } catch {
@@ -60,15 +66,24 @@ export default function MovementsPage() {
 
   const filtered = useMemo(() => {
     let rows = filter === "all" ? transactions : transactions.filter((t) => t.category.type === filter);
+    if (filter === "transfer") rows = [];
     if (query) {
       rows = rows.filter(
         (t) => (t.description ?? "").toLowerCase().includes(query) || t.category.name.toLowerCase().includes(query),
       );
     }
-    return [...rows].sort((a, b) =>
-      a.date === b.date ? b.created_at.localeCompare(a.created_at) : b.date.localeCompare(a.date),
-    );
+    return rows;
   }, [transactions, filter, query]);
+
+  const filteredTransfers = useMemo(() => {
+    if (filter !== "all" && filter !== "transfer") return [];
+    if (!query) return transfers;
+    return transfers.filter(
+      (t) => (t.description ?? "").toLowerCase().includes(query) || "transferencia".includes(query),
+    );
+  }, [transfers, filter, query]);
+
+  const visibleCount = filtered.length + filteredTransfers.length;
 
   const totals = useMemo(() => {
     let income = 0;
@@ -79,6 +94,14 @@ export default function MovementsPage() {
     }
     return { income, expense, net: income - expense };
   }, [transactions]);
+
+  async function handleDeleteTransfer(t: Transfer) {
+    const route = `${accountNameById.get(t.from_account_id) ?? "?"} → ${accountNameById.get(t.to_account_id) ?? "?"}`;
+    if (!window.confirm(`¿Eliminar la transferencia ${route} por ${formatCLP(t.amount)}? Los saldos se ajustarán.`))
+      return;
+    await deleteTransfer(t.id);
+    await loadData();
+  }
 
   async function handleDelete(tx: Transaction) {
     const label = tx.description || tx.category.name;
@@ -91,7 +114,7 @@ export default function MovementsPage() {
     <div className="page">
       <div className="page-header">
         <div>
-          <p className="page-eyebrow">Todos tus ingresos y gastos, de todas tus cuentas</p>
+          <p className="page-eyebrow">Tus ingresos, gastos y transferencias, de todas tus cuentas</p>
           <h1>Transacciones</h1>
         </div>
         <div className="page-header-actions">
@@ -145,7 +168,7 @@ export default function MovementsPage() {
             ))}
           </div>
           <span className="cell-muted">
-            {filtered.length} {filtered.length === 1 ? "transacción" : "transacciones"} en {monthName(month)}
+            {visibleCount} {visibleCount === 1 ? "movimiento" : "movimientos"} en {monthName(month)}
           </span>
         </div>
 
@@ -163,9 +186,13 @@ export default function MovementsPage() {
         {!loading && !error && (
           <TransactionsTable
             transactions={filtered}
-            accountNameById={accountNameById}
+            transfers={filteredTransfers}
+            accountNames={accountNameById}
+            showAccountColumn
             onEdit={(tx) => setModal(tx)}
             onDelete={handleDelete}
+            onEditTransfer={setEditingTransfer}
+            onDeleteTransfer={handleDeleteTransfer}
             emptyMessage={
               query ? "Ninguna transacción coincide con tu búsqueda." : `No hay transacciones en ${monthName(month)}.`
             }
@@ -179,6 +206,16 @@ export default function MovementsPage() {
           categories={categories}
           transaction={modal === "new" ? undefined : modal}
           onClose={() => setModal(null)}
+          onSaved={loadData}
+        />
+      )}
+
+      {editingTransfer && (
+        <TransactionFormModal
+          accounts={accounts}
+          categories={categories}
+          transfer={editingTransfer}
+          onClose={() => setEditingTransfer(null)}
           onSaved={loadData}
         />
       )}
