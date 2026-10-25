@@ -144,10 +144,11 @@ class FakeMessages:
 
 
 def install_fake_client(monkeypatch, response):
-    messages = FakeMessages(response)
-    fake_client = SimpleNamespace(beta=SimpleNamespace(messages=messages))
+    """Cliente falso con las dos rutas: messages (normal) y beta.messages (con fallbacks)."""
+    standard, beta = FakeMessages(response), FakeMessages(response)
+    fake_client = SimpleNamespace(messages=standard, beta=SimpleNamespace(messages=beta))
     monkeypatch.setattr(receipt_scanner.anthropic, "Anthropic", lambda **kw: fake_client)
-    return messages
+    return SimpleNamespace(standard=standard, beta=beta)
 
 
 def claude_response(payload, stop_reason="end_turn"):
@@ -156,24 +157,49 @@ def claude_response(payload, stop_reason="end_turn"):
     )
 
 
+RECEIPT_PAYLOAD = {
+    "is_receipt": True,
+    "merchant": "Jumbo",
+    "date": "2026-10-01",
+    "currency": "CLP",
+    "total": 5000,
+    "items": [{"description": "Queso", "amount": 5000, "category_id": 3}],
+}
+
+
+def test_default_model_is_haiku_without_fallbacks(monkeypatch, scanner_enabled):
+    assert settings.RECEIPT_MODEL == "claude-haiku-5-5"
+    calls = install_fake_client(monkeypatch, claude_response(RECEIPT_PAYLOAD))
+
+    receipt_scanner.extract_receipt(PNG, "image/png", [(3, "Comida")])
+
+    # Haiku no tiene fallback del lado del servidor: va por la ruta normal y sin el parámetro.
+    assert calls.beta.kwargs is None
+    sent = calls.standard.kwargs
+    assert sent["model"] == "claude-haiku-5-5"
+    assert "fallbacks" not in sent and "betas" not in sent
+
+
+def test_models_with_server_fallback_use_it(monkeypatch, scanner_enabled):
+    monkeypatch.setattr(settings, "RECEIPT_MODEL", "claude-opus-5-5")
+    calls = install_fake_client(monkeypatch, claude_response(RECEIPT_PAYLOAD))
+
+    receipt_scanner.extract_receipt(PNG, "image/png", [])
+
+    assert calls.standard.kwargs is None
+    assert calls.beta.kwargs["fallbacks"] == "default"
+    assert "server-side-fallback-2026-07-01" in calls.beta.kwargs["betas"]
+
+
 def test_service_builds_the_request_and_parses_the_json(monkeypatch, scanner_enabled):
-    payload = {
-        "is_receipt": True,
-        "merchant": "Jumbo",
-        "date": "2026-10-01",
-        "currency": "CLP",
-        "total": 5000,
-        "items": [{"description": "Queso", "amount": 5000, "category_id": 3}],
-    }
-    messages = install_fake_client(monkeypatch, claude_response(payload))
+    calls = install_fake_client(monkeypatch, claude_response(RECEIPT_PAYLOAD))
 
     result = receipt_scanner.extract_receipt(PNG, "image/png", [(3, "Comida")])
     assert result.merchant == "Jumbo" and result.items[0].category_id == 3
 
-    sent = messages.kwargs
-    assert sent["model"] == settings.RECEIPT_MODEL
-    assert sent["fallbacks"] == "default" and "server-side-fallback-2026-07-01" in sent["betas"]
+    sent = calls.standard.kwargs
     assert sent["output_config"]["format"]["type"] == "json_schema"
+    assert sent["output_config"]["effort"] == "medium"
     image_block, text_block = sent["messages"][0]["content"]
     assert image_block["type"] == "image" and image_block["source"]["media_type"] == "image/png"
     assert "id 3: Comida" in text_block["text"]

@@ -15,6 +15,11 @@ from app.core.config import settings
 
 SUPPORTED_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
+# Modelos con fallback del lado del servidor: si un clasificador declina la solicitud, la API la reintenta en el
+# modelo recomendado. Haiku no lo tiene (enviarle `fallbacks` no sirve o da 400), así que ahí no se envía.
+_SERVER_FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "claude-sonnet-5-5"}
+_FALLBACK_BETA = "server-side-fallback-2026-07-01"
+
 
 class ReceiptScanError(Exception):
     """La boleta no se pudo leer (foto ilegible, no es una boleta, respuesta inválida)."""
@@ -94,35 +99,36 @@ def extract_receipt(image: bytes, media_type: str, categories: list[tuple[int, s
         raise ReceiptServiceUnavailable("El escaneo de boletas no está configurado en este servidor.")
 
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY, timeout=90.0)
-    try:
-        response = client.beta.messages.create(
-            model=settings.RECEIPT_MODEL,
-            max_tokens=16000,
-            # Si un clasificador de seguridad declinara la solicitud, se reintenta en el modelo recomendado.
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
-            output_config={
-                "effort": "medium",
-                "format": {"type": "json_schema", "schema": RECEIPT_SCHEMA},
-            },
-            system=SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": base64.standard_b64encode(image).decode("ascii"),
-                            },
+    request = dict(
+        model=settings.RECEIPT_MODEL,
+        max_tokens=16000,
+        output_config={
+            "effort": "medium",
+            "format": {"type": "json_schema", "schema": RECEIPT_SCHEMA},
+        },
+        system=SYSTEM_PROMPT,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": base64.standard_b64encode(image).decode("ascii"),
                         },
-                        {"type": "text", "text": f"{_categories_text(categories)}\n\nExtrae los datos de esta boleta."},
-                    ],
-                }
-            ],
-        )
+                    },
+                    {"type": "text", "text": f"{_categories_text(categories)}\n\nExtrae los datos de esta boleta."},
+                ],
+            }
+        ],
+    )
+    try:
+        if settings.RECEIPT_MODEL in _SERVER_FALLBACK_MODELS:
+            response = client.beta.messages.create(**request, betas=[_FALLBACK_BETA], fallbacks="default")
+        else:
+            response = client.messages.create(**request)
     except anthropic.RateLimitError as e:
         raise ReceiptServiceUnavailable("El servicio de lectura está ocupado. Intenta en un momento.") from e
     except anthropic.BadRequestError as e:

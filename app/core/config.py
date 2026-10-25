@@ -16,7 +16,8 @@ class Settings(BaseSettings):
 
     # Escaneo de boletas con Claude: sin API key, la función queda desactivada.
     ANTHROPIC_API_KEY: str = ""
-    RECEIPT_MODEL: str = "claude-opus-5-5"
+    # Haiku: lee boletas bien y es el más barato (~1-2 CLP por boleta). Para más precisión: "claude-opus-5-5".
+    RECEIPT_MODEL: str = "claude-haiku-5-5"
     RECEIPT_SCANS_PER_DAY: int = 10
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
