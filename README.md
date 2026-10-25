@@ -11,7 +11,8 @@ Mucha gente no sabe con certeza a dónde se le va el dinero cada mes. Las apps d
 ## Funcionalidades
 
 - **Dashboard del mes:** ingresos, gastos y balance con variación respecto al mes anterior, porcentaje de ahorro, gastos por categoría, ingresos vs. gastos por semana y últimas transacciones.
-- **Cuentas con bancos de Chile:** al crear una cuenta eliges tu institución (BancoEstado, Banco de Chile, Santander, MACH, Tenpo, CMR...) y solo ves sus productos (CuentaRUT, Cuenta Corriente, tarjeta de crédito...). El tipo y la moneda de la cuenta salen del producto. Las tarjetas de crédito muestran su deuda en negativo.
+- **Cuentas con bancos de Chile:** al crear una cuenta eliges tu institución (BancoEstado, Banco de Chile, Santander, MACH, Tenpo, CMR...) y solo ves sus productos (CuentaRUT, Cuenta Corriente, tarjeta de crédito...). El tipo y la moneda de la cuenta salen del producto, y cada cuenta se puede editar después para cambiar su institución o producto.
+- **Tarjetas de crédito con cupo:** la deuda se muestra en negativo, junto al cupo usado y disponible y un consejo según el uso (mantenerse bajo el 30%, alerta desde el 80%).
 - **Transacciones:** registro, edición y eliminación con filtros por mes y tipo, y un buscador por descripción o categoría. El saldo de cada cuenta se actualiza solo.
 - **Categorías y presupuestos:** cada categoría de gasto puede tener un límite mensual, con una barra que pasa de verde a amarillo (80%) y rojo (excedido).
 - **Metas de ahorro:** abonos y retiros con historial, cuánto apartar por día, semana o mes, un indicador de ritmo ("vas al día", "vas atrasado $X") y un gráfico del ahorro real contra el plan.
@@ -106,6 +107,7 @@ Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se impr
 
 - **El saldo se calcula, no se edita.** El saldo de una cuenta solo cambia a través de sus movimientos (crear, editar o borrar), así nunca se desincroniza del historial.
 - **La categoría define si es ingreso o gasto.** La transacción no tiene un campo de tipo propio, así que no se puede, por ejemplo, registrar "Comida" como un ingreso por error.
+- **La moneda de una cuenta con movimientos no se cambia.** Al editar, el backend rechaza un cambio de producto que implique otra moneda si la cuenta ya tiene transacciones, porque sus montos quedarían mal interpretados.
 - **El catálogo manda.** Si una cuenta se crea desde un producto del catálogo, el backend fija el tipo y la moneda según el producto, aunque el cliente envíe otros valores. Es una lista mantenida a mano, porque no existe una API pública con los productos bancarios de Chile.
 - **Máximo 3 categorías de ingreso.** Es una decisión de producto: la mayoría de las personas tiene una o dos fuentes de ingreso, y limitar las categorías evita que se desordenen. Los gastos no tienen límite.
 - **El plan de ahorro parte desde lo que ya tenías.** El ritmo de una meta se mide contra una línea que va desde lo ahorrado al crearla hasta el objetivo. Así una meta nueva con plata ya guardada aparece "al día" y no "adelantada" por todo ese monto.
@@ -116,8 +118,7 @@ Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se impr
 
 - Tests automatizados (pytest para la API y tests de componentes en el frontend)
 - Deploy público con una cuenta demo
-- Cupo de tarjetas de crédito (usado / disponible) con alertas
-- Editar cuentas existentes (institución y producto)
+- Transferencias entre cuentas (por ejemplo, pagar la tarjeta desde la cuenta corriente)
 - Escanear boletas, perfil de usuario y notificaciones
 
 ## Autor

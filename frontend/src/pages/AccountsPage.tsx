@@ -5,8 +5,10 @@ import { listInstitutions } from "../api/catalog";
 import type { Institution } from "../api/catalog";
 import type { Account, AccountType } from "../api/types";
 import AccountFormModal from "../components/AccountFormModal";
+import CreditUsageBar from "../components/CreditUsageBar";
 import { PlusIcon, WalletIcon } from "../components/Icons";
 import InstitutionBadge from "../components/InstitutionBadge";
+import { creditUsage } from "../utils/credit";
 import { formatCLP, formatMoney } from "../utils/format";
 
 const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
@@ -21,7 +23,8 @@ export default function AccountsPage() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  // null = cerrado; "new" = crear; una cuenta = editarla.
+  const [modal, setModal] = useState<"new" | Account | null>(null);
 
   async function loadAccounts() {
     setError(null);
@@ -61,7 +64,7 @@ export default function AccountsPage() {
           <h1>Mis cuentas</h1>
         </div>
         <div className="page-header-actions">
-          <button type="button" className="button-primary" onClick={() => setModalOpen(true)}>
+          <button type="button" className="button-primary" onClick={() => setModal("new")}>
             <PlusIcon />
             Nueva cuenta
           </button>
@@ -88,6 +91,7 @@ export default function AccountsPage() {
               ? [account.institution_name, account.product_name].filter(Boolean).join(" · ")
               : ACCOUNT_TYPE_LABELS[account.type];
             const isDebt = account.type === "credit_card" && account.balance < 0;
+            const usage = creditUsage(account);
             return (
               <div key={account.id} className="account-card">
                 <Link to={`/accounts/${account.id}`} className="account-link">
@@ -109,19 +113,31 @@ export default function AccountsPage() {
                   <p className={`balance${isDebt ? " amount-expense" : ""}`}>
                     {formatMoney(account.balance, account.currency)}
                   </p>
-                  {isDebt && <p className="account-type">Deuda de la tarjeta</p>}
+                  {isDebt && !usage && <p className="account-type">Deuda de la tarjeta</p>}
+                  {usage && <CreditUsageBar usage={usage} compact />}
                   {account.currency !== "CLP" && <p className="account-type">≈ {formatCLP(account.balance_base)}</p>}
                 </Link>
-                <button className="link-button account-delete" onClick={() => handleDelete(account)}>
-                  Eliminar
-                </button>
+                <div className="account-card-actions">
+                  <button type="button" className="link-button-muted" onClick={() => setModal(account)}>
+                    Editar
+                  </button>
+                  <button type="button" className="link-button account-delete" onClick={() => handleDelete(account)}>
+                    Eliminar
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      {modalOpen && <AccountFormModal onClose={() => setModalOpen(false)} onCreated={loadAccounts} />}
+      {modal && (
+        <AccountFormModal
+          account={modal === "new" ? undefined : modal}
+          onClose={() => setModal(null)}
+          onSaved={loadAccounts}
+        />
+      )}
     </div>
   );
 }

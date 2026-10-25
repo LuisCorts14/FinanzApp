@@ -6,9 +6,12 @@ import { listCategories } from "../api/categories";
 import { deleteTransaction, listTransactions } from "../api/transactions";
 import type { Account, Category, Transaction } from "../api/types";
 import { ChevronLeftIcon, PlusIcon, WalletIcon } from "../components/Icons";
+import AccountFormModal from "../components/AccountFormModal";
+import CreditUsageBar from "../components/CreditUsageBar";
 import InstitutionBadge from "../components/InstitutionBadge";
 import TransactionFormModal from "../components/TransactionFormModal";
 import TransactionsTable from "../components/TransactionsTable";
+import { creditUsage } from "../utils/credit";
 import { formatCLP, formatMoney } from "../utils/format";
 
 export default function AccountDetailPage() {
@@ -23,6 +26,7 @@ export default function AccountDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<"new" | Transaction | null>(null);
+  const [editingAccount, setEditingAccount] = useState(false);
 
   const loadData = useCallback(async () => {
     setError(null);
@@ -74,6 +78,7 @@ export default function AccountDetailPage() {
   if (error || !account) return <div className="page error">{error ?? "Cuenta no encontrada"}</div>;
 
   const isDebt = account.type === "credit_card" && account.balance < 0;
+  const usage = creditUsage(account);
   const subtitle = [account.institution_name, account.product_name].filter(Boolean).join(" · ");
 
   return (
@@ -97,6 +102,9 @@ export default function AccountDetailPage() {
           </div>
         </div>
         <div className="page-header-actions">
+          <button type="button" className="button-secondary button-header" onClick={() => setEditingAccount(true)}>
+            Editar cuenta
+          </button>
           <button type="button" className="button-primary" onClick={() => setModal("new")}>
             <PlusIcon />
             Nueva transacción
@@ -104,7 +112,7 @@ export default function AccountDetailPage() {
         </div>
       </div>
 
-      <div className="kpi-row kpi-row-single">
+      <div className={`kpi-row ${usage ? "kpi-row-double" : "kpi-row-single"}`}>
         <div className="kpi-card">
           <div className="kpi-header">{isDebt ? "Deuda de la tarjeta" : "Saldo actual"}</div>
           <div className={`kpi-value${isDebt ? " amount-expense" : ""}`}>
@@ -113,9 +121,18 @@ export default function AccountDetailPage() {
           <span className="kpi-delta kpi-delta-neutral">
             {account.currency !== "CLP"
               ? `≈ ${formatCLP(account.balance_base)}`
-              : "Se actualiza solo con cada ingreso y gasto"}
+              : account.type === "credit_card"
+                ? "Cada compra con la tarjeta la aumenta; cada pago la reduce"
+                : "Se actualiza solo con cada ingreso y gasto"}
           </span>
         </div>
+        {usage && (
+          <div className="kpi-card">
+            <div className="kpi-header">Cupo de la tarjeta</div>
+            <div className="kpi-value">{formatCLP(usage.limit)}</div>
+            <CreditUsageBar usage={usage} />
+          </div>
+        )}
       </div>
 
       <section className="card">
@@ -130,6 +147,10 @@ export default function AccountDetailPage() {
           emptyMessage="Todavía no hay transacciones en esta cuenta."
         />
       </section>
+
+      {editingAccount && (
+        <AccountFormModal account={account} onClose={() => setEditingAccount(false)} onSaved={loadData} />
+      )}
 
       {modal && (
         <TransactionFormModal

@@ -12,6 +12,7 @@ export interface Account {
   product_id: string | null;
   institution_name: string | null;
   product_name: string | null;
+  credit_limit: number | null;
   created_at: string;
 }
 
@@ -22,6 +23,16 @@ export interface AccountCreate {
   balance: number;
   institution_id?: string | null;
   product_id?: string | null;
+  credit_limit?: number | null;
+}
+
+// El saldo no se edita: solo cambia con los movimientos.
+export interface AccountUpdate {
+  name?: string;
+  type?: AccountType;
+  institution_id?: string | null;
+  product_id?: string | null;
+  credit_limit?: number | null;
 }
 
 export interface Category {

@@ -2853,3 +2853,91 @@ button:disabled {
   margin: 20px 0 0;
   font-size: 0.85rem;
 }
+
+/* Edición de cuentas y cupo de tarjetas */
+
+.account-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.account-card-actions .link-button-muted {
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
+.selected-institution-change {
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+
+.field-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+
+.field-readonly-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.field-readonly strong {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.button-header {
+  height: 46px;
+  padding: 0 18px;
+}
+
+.kpi-row-double {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 760px;
+}
+
+.credit-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.credit-usage-compact {
+  margin-top: 10px;
+}
+
+.credit-usage-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.credit-usage-header strong {
+  color: var(--text-primary);
+}
+
+.credit-usage .budget-track {
+  height: 8px;
+}
+
+.credit-usage .budget-row-note {
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .kpi-row-double {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.credit-usage-header span {
+  white-space: nowrap;
+}

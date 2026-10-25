@@ -6,6 +6,7 @@ from app.api.deps import get_current_user
 from app.core.institutions import get_product
 from app.db.session import get_db
 from app.models.account import Account
+from app.models.enums import AccountType
 from app.models.user import User
 from app.schemas.account import AccountCreate, AccountRead, AccountUpdate
 
@@ -19,6 +20,19 @@ def _get_owned_account_or_404(db: Session, account_id: int, user: User) -> Accou
     return account
 
 
+def _apply_catalog(data: dict) -> None:
+    """Si viene un producto del catálogo, valida que exista y fija el tipo y la moneda desde él."""
+    institution_id, product_id = data.get("institution_id"), data.get("product_id")
+    if not (institution_id or product_id):
+        return
+    product = get_product(institution_id or "", product_id or "")
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Institución o producto no válido")
+    # El producto del catálogo manda: así el tipo y la moneda no pueden contradecirlo.
+    data["type"] = product.account_type
+    data["currency"] = product.currency
+
+
 @router.post("", response_model=AccountRead, status_code=status.HTTP_201_CREATED)
 def create_account(
     account_in: AccountCreate,
@@ -26,16 +40,9 @@ def create_account(
     current_user: User = Depends(get_current_user),
 ):
     data = account_in.model_dump()
-    if data["institution_id"] or data["product_id"]:
-        product = get_product(data["institution_id"] or "", data["product_id"] or "")
-        if product is None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Institución o producto no válido",
-            )
-        # El producto del catálogo manda: así el tipo y la moneda no pueden contradecirlo.
-        data["type"] = product.account_type
-        data["currency"] = product.currency
+    _apply_catalog(data)
+    if data["type"] != AccountType.CREDIT_CARD:
+        data["credit_limit"] = None
 
     account = Account(**data, owner_id=current_user.id)
     db.add(account)
@@ -65,9 +72,25 @@ def update_account(
     current_user: User = Depends(get_current_user),
 ):
     account = _get_owned_account_or_404(db, account_id, current_user)
+    data = account_in.model_dump(exclude_unset=True)
 
-    for field, value in account_in.model_dump(exclude_unset=True).items():
+    if "institution_id" in data or "product_id" in data:
+        # Se cambia (o se quita) la institución: ambos campos van juntos.
+        data.setdefault("institution_id", None)
+        data.setdefault("product_id", None)
+        _apply_catalog(data)
+
+    new_currency = data.get("currency", account.currency)
+    if new_currency != account.currency and account.transactions:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No puedes cambiar la moneda de una cuenta que ya tiene movimientos",
+        )
+
+    for field, value in data.items():
         setattr(account, field, value)
+    if account.type != AccountType.CREDIT_CARD:
+        account.credit_limit = None
 
     db.commit()
     db.refresh(account)

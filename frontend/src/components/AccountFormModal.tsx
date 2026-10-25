@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import { createAccount } from "../api/accounts";
+import { createAccount, updateAccount } from "../api/accounts";
 import { listInstitutions } from "../api/catalog";
 import type { Institution, InstitutionProduct } from "../api/catalog";
-import type { AccountType } from "../api/types";
+import type { Account, AccountType } from "../api/types";
+import { formatMoney } from "../utils/format";
 import { ChevronLeftIcon, CloseIcon, SearchIcon, WalletIcon } from "./Icons";
 import InstitutionBadge from "./InstitutionBadge";
 
 interface AccountFormModalProps {
   onClose: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
+  // Con una cuenta, el modal la edita en vez de crear una nueva.
+  account?: Account;
 }
 
 // Lo que el usuario eligió en el paso 1.
 type Choice = { kind: "institution"; institution: Institution } | { kind: "cash" } | { kind: "other" };
+type OtherType = Exclude<AccountType, "cash">;
 
-const OTHER_TYPE_LABELS: Record<Exclude<AccountType, "cash">, string> = {
+const OTHER_TYPE_LABELS: Record<OtherType, string> = {
   bank: "Cuenta bancaria",
   credit_card: "Tarjeta de crédito",
   savings: "Ahorro o inversión",
@@ -30,25 +34,47 @@ function suggestedName(institution: Institution, product: InstitutionProduct): s
   return normalize(product.name).includes(normalize(brand)) ? product.name : `${institution.name} · ${product.name}`;
 }
 
-export default function AccountFormModal({ onClose, onCreated }: AccountFormModalProps) {
+function apiErrorDetail(err: unknown): string | undefined {
+  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  return typeof detail === "string" ? detail : undefined;
+}
+
+// Paso inicial al editar: cuentas sin institución quedan como "Efectivo" u "Otra".
+function initialChoice(account?: Account): Choice | null {
+  if (!account || account.institution_id) return null;
+  return account.type === "cash" ? { kind: "cash" } : { kind: "other" };
+}
+
+export default function AccountFormModal({ onClose, onSaved, account }: AccountFormModalProps) {
+  const isEdit = Boolean(account);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  const [choice, setChoice] = useState<Choice | null>(null);
+  const [choice, setChoice] = useState<Choice | null>(() => initialChoice(account));
   const [product, setProduct] = useState<InstitutionProduct | null>(null);
-  const [otherType, setOtherType] = useState<Exclude<AccountType, "cash">>("bank");
-  const [name, setName] = useState("");
-  const [nameTouched, setNameTouched] = useState(false);
+  const [otherType, setOtherType] = useState<OtherType>(account && account.type !== "cash" ? account.type : "bank");
+  const [name, setName] = useState(account?.name ?? "");
+  // Al editar, el nombre que ya eligió la persona no se reemplaza automáticamente.
+  const [nameTouched, setNameTouched] = useState(isEdit);
   const [balance, setBalance] = useState("");
+  const [creditLimit, setCreditLimit] = useState(account?.credit_limit ? String(account.credit_limit) : "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     listInstitutions()
-      .then(setInstitutions)
+      .then((list) => {
+        setInstitutions(list);
+        // Al editar una cuenta con institución, se abre directo en el paso 2 con su producto marcado.
+        const inst = account?.institution_id ? list.find((i) => i.id === account.institution_id) : undefined;
+        if (inst) {
+          setChoice({ kind: "institution", institution: inst });
+          setProduct(inst.products.find((p) => p.id === account?.product_id) ?? null);
+        }
+      })
       .catch(() => setLoadError("No se pudo cargar la lista de instituciones."));
-  }, []);
+  }, [account]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -74,22 +100,19 @@ export default function AccountFormModal({ onClose, onCreated }: AccountFormModa
     setChoice({ kind: "institution", institution });
     const only = institution.products.length === 1 ? institution.products[0] : null;
     setProduct(only);
-    setNameTouched(false);
-    setName(only ? suggestedName(institution, only) : institution.name);
+    if (!nameTouched) setName(only ? suggestedName(institution, only) : institution.name);
   }
 
   function pickCash() {
     setChoice({ kind: "cash" });
     setProduct(null);
-    setName("Efectivo");
-    setNameTouched(false);
+    if (!nameTouched) setName("Efectivo");
   }
 
   function pickOther() {
     setChoice({ kind: "other" });
     setProduct(null);
-    setName("");
-    setNameTouched(false);
+    if (!nameTouched) setName("");
   }
 
   function pickProduct(institution: Institution, p: InstitutionProduct) {
@@ -105,31 +128,42 @@ export default function AccountFormModal({ onClose, onCreated }: AccountFormModa
 
   const accountType: AccountType | null =
     choice?.kind === "cash" ? "cash" : choice?.kind === "other" ? otherType : (product?.account_type ?? null);
-  const currency = product?.currency ?? "CLP";
+  const currency = product?.currency ?? account?.currency ?? "CLP";
   const canSubmit = Boolean(choice && name.trim() && accountType);
+  const isCard = accountType === "credit_card";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!choice || !accountType || !name.trim()) return;
     setSubmitting(true);
     setError(null);
+    const fields = {
+      name: name.trim(),
+      type: accountType,
+      institution_id: choice.kind === "institution" ? choice.institution.id : null,
+      product_id: choice.kind === "institution" ? (product?.id ?? null) : null,
+      credit_limit: isCard && Number(creditLimit) > 0 ? Number(creditLimit) : null,
+    };
     try {
-      await createAccount({
-        name: name.trim(),
-        type: accountType,
-        currency,
-        balance: Number(balance) || 0,
-        institution_id: choice.kind === "institution" ? choice.institution.id : null,
-        product_id: choice.kind === "institution" ? (product?.id ?? null) : null,
-      });
-      onCreated();
+      if (account) await updateAccount(account.id, fields);
+      else await createAccount({ ...fields, currency, balance: Number(balance) || 0 });
+      onSaved();
       onClose();
-    } catch {
-      setError("No se pudo crear la cuenta. Intenta de nuevo.");
+    } catch (err) {
+      setError(apiErrorDetail(err) ?? (isEdit ? "No se pudo guardar la cuenta." : "No se pudo crear la cuenta."));
     } finally {
       setSubmitting(false);
     }
   }
+
+  const title = isEdit ? "Editar cuenta" : "Nueva cuenta";
+  const subtitle = choice
+    ? isEdit
+      ? "Nombre, institución y producto"
+      : "Paso 2 de 2 · Detalles"
+    : isEdit
+      ? "Elige la institución de esta cuenta"
+      : "Paso 1 de 2 · ¿Dónde tienes tu dinero?";
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -137,21 +171,19 @@ export default function AccountFormModal({ onClose, onCreated }: AccountFormModa
         className="modal modal-wide"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="new-account-title"
+        aria-labelledby="account-modal-title"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
           <div className="modal-title-row">
             {choice && (
-              <button type="button" className="icon-button" aria-label="Volver" onClick={goBack}>
+              <button type="button" className="icon-button" aria-label="Elegir otra institución" onClick={goBack}>
                 <ChevronLeftIcon />
               </button>
             )}
             <div>
-              <h2 id="new-account-title">Nueva cuenta</h2>
-              <p className="modal-subtitle">
-                {choice ? "Paso 2 de 2 · Detalles" : "Paso 1 de 2 · ¿Dónde tienes tu dinero?"}
-              </p>
+              <h2 id="account-modal-title">{title}</h2>
+              <p className="modal-subtitle">{subtitle}</p>
             </div>
           </div>
           <button type="button" className="icon-button" aria-label="Cerrar" onClick={onClose}>
@@ -242,6 +274,9 @@ export default function AccountFormModal({ onClose, onCreated }: AccountFormModa
                     ? "Efectivo"
                     : "Otra institución"}
               </span>
+              <button type="button" className="link-button-muted selected-institution-change" onClick={goBack}>
+                Cambiar
+              </button>
             </div>
 
             {choice.kind === "institution" && (
@@ -267,7 +302,7 @@ export default function AccountFormModal({ onClose, onCreated }: AccountFormModa
             {choice.kind === "other" && (
               <label>
                 Tipo
-                <select value={otherType} onChange={(e) => setOtherType(e.target.value as typeof otherType)}>
+                <select value={otherType} onChange={(e) => setOtherType(e.target.value as OtherType)}>
                   {Object.entries(OTHER_TYPE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
@@ -291,31 +326,57 @@ export default function AccountFormModal({ onClose, onCreated }: AccountFormModa
               />
             </label>
 
-            <label>
-              {accountType === "credit_card" ? "Saldo actual" : "¿Cuánto tienes hoy?"} ({currency})
-              <input
-                type="number"
-                step={currency === "CLP" ? "1" : "0.01"}
-                inputMode="decimal"
-                value={balance}
-                onChange={(e) => setBalance(e.target.value)}
-                placeholder="0"
-              />
-              <span className="field-hint">
-                {accountType === "credit_card"
-                  ? "En una tarjeta de crédito, lo que debes se anota en negativo (ej. -150000)."
-                  : "Desde aquí, el saldo se actualiza solo con cada ingreso y gasto que registres."}
-              </span>
-            </label>
+            {isEdit ? (
+              <div className="field-readonly">
+                <span className="field-readonly-label">Saldo actual</span>
+                <strong>{account && formatMoney(account.balance, account.currency)}</strong>
+                <span className="field-hint">El saldo cambia solo con tus ingresos y gastos.</span>
+              </div>
+            ) : (
+              <label>
+                {isCard ? "Saldo actual" : "¿Cuánto tienes hoy?"} ({currency})
+                <input
+                  type="number"
+                  step={currency === "CLP" ? "1" : "0.01"}
+                  inputMode="decimal"
+                  value={balance}
+                  onChange={(e) => setBalance(e.target.value)}
+                  placeholder="0"
+                />
+                <span className="field-hint">
+                  {isCard
+                    ? "En una tarjeta de crédito, lo que debes se anota en negativo (ej. -150000)."
+                    : "Desde aquí, el saldo se actualiza solo con cada ingreso y gasto que registres."}
+                </span>
+              </label>
+            )}
+
+            {isCard && (
+              <label>
+                Cupo total de la tarjeta (opcional)
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  inputMode="numeric"
+                  value={creditLimit}
+                  onChange={(e) => setCreditLimit(e.target.value)}
+                  placeholder="Ej. 500000"
+                />
+                <span className="field-hint">
+                  Lo encuentras en tu estado de cuenta. Te mostraremos cuánto llevas usado y cuánto te queda.
+                </span>
+              </label>
+            )}
 
             {error && <p className="error">{error}</p>}
 
             <div className="modal-actions">
-              <button type="button" className="button-secondary" onClick={goBack}>
-                Atrás
+              <button type="button" className="button-secondary" onClick={isEdit ? onClose : goBack}>
+                {isEdit ? "Cancelar" : "Atrás"}
               </button>
               <button type="submit" disabled={submitting || !canSubmit}>
-                {submitting ? "Creando..." : "Crear cuenta"}
+                {submitting ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear cuenta"}
               </button>
             </div>
           </form>
