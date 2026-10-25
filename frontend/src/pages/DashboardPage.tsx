@@ -53,12 +53,12 @@ function PaydayTip({ payday, balance }: { payday: number | null; balance: number
   }
   const days = daysUntilPayday(payday);
   const when = formatShortDate(toISODate(nextPayday(payday)));
-  const dayWord = days === 1 ? "día" : "días";
+  const countdown = days === 1 ? "Falta 1 día" : `Faltan ${days} días`;
   if (balance <= 0) {
     return (
       <div className="tip-card tip-card-warning">
         <strong>
-          Faltan {days} {dayWord} para tu sueldo ({when}).
+          {countdown} para tu sueldo ({when}).
         </strong>{" "}
         Este mes ya gastaste todo lo que entró: evita gastos que no sean necesarios hasta entonces.
       </div>
@@ -67,7 +67,7 @@ function PaydayTip({ payday, balance }: { payday: number | null; balance: number
   return (
     <div className="tip-card">
       <strong>
-        Faltan {days} {dayWord} para tu sueldo ({when}).
+        {countdown} para tu sueldo ({when}).
       </strong>{" "}
       Para no gastar más de lo que te entró este mes, puedes gastar hasta <strong>{formatCLP(balance / days)}</strong>{" "}
       por día.

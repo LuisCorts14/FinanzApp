@@ -15,6 +15,7 @@ from app.models.enums import TransactionType
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.stats import BudgetStatus, CategoryTotal, MonthlySummary, WeeklySummary
+from app.services.budgets import budget_statuses
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
@@ -85,35 +86,7 @@ def budget_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    start, end = month_range(month or _current_month())
-
-    spent_stmt = (
-        select(Transaction.category_id, Transaction.amount, Account.currency)
-        .join(Account, Transaction.account_id == Account.id)
-        .where(
-            Account.owner_id == current_user.id,
-            Transaction.date >= start,
-            Transaction.date < end,
-        )
-    )
-    spent_by_category: dict[int, float] = defaultdict(float)
-    for category_id, amount, currency in db.execute(spent_stmt).all():
-        spent_by_category[category_id] += _to_base(amount, currency)
-
-    categories_stmt = (
-        select(Category.id, Category.name, Category.monthly_budget)
-        .where(Category.owner_id == current_user.id, Category.monthly_budget.isnot(None))
-        .order_by(Category.name)
-    )
-    return [
-        BudgetStatus(
-            category_id=row.id,
-            category_name=row.name,
-            monthly_budget=float(row.monthly_budget),
-            spent=round(spent_by_category.get(row.id, 0.0), 2),
-        )
-        for row in db.execute(categories_stmt).all()
-    ]
+    return budget_statuses(db, current_user, month or _current_month())
 
 
 @router.get("/weekly-summary", response_model=list[WeeklySummary])

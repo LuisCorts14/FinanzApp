@@ -4,9 +4,9 @@ import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "reac
 import { useAuth } from "../context/AuthContext";
 import { getInitials } from "../utils/user";
 import BrandLogo from "./BrandLogo";
+import NotificationsBell from "./NotificationsBell";
 import SettingsProvider from "./SettingsProvider";
 import {
-  BellIcon,
   ChartIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -118,9 +118,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         </form>
 
         <div className="topbar-right">
-          <button type="button" className="icon-button" aria-label="Notificaciones (próximamente)" title="Próximamente">
-            <BellIcon />
-          </button>
+          <NotificationsBell />
           <NavLink to="/perfil" className="avatar" title={`${displayName} · Mi perfil`} aria-label="Mi perfil">
             {getInitials(displayName)}
           </NavLink>
