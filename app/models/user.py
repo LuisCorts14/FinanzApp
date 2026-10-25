@@ -15,4 +15,12 @@ class User(Base):
     full_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # Se incrementa al cambiar la contraseña: los tokens emitidos antes dejan de ser válidos.
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+    # Configuración personal
+    payday: Mapped[int | None] = mapped_column(Integer, nullable=True)  # día del mes en que llega el sueldo
+    savings_target_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=20, server_default="20")
+    budget_alert_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=80, server_default="80")
+    # Sin llave foránea a propósito (users y accounts se apuntarían mutuamente): se valida al guardar y,
+    # si la cuenta ya no existe, la configuración la informa como vacía.
+    default_account_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

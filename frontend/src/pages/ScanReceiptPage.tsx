@@ -7,6 +7,7 @@ import type { ReceiptQuota, ReceiptScanResult } from "../api/receipts";
 import { createTransaction } from "../api/transactions";
 import type { Account, Category } from "../api/types";
 import { CloseIcon, PlusIcon, ScanIcon } from "../components/Icons";
+import { useSettings } from "../context/settingsContext";
 import { formatCLP } from "../utils/format";
 import { shrinkImage } from "../utils/image";
 import { toISODate, todayLocal } from "../utils/savings";
@@ -29,6 +30,7 @@ function apiErrorDetail(err: unknown): string | undefined {
 let nextKey = 1;
 
 export default function ScanReceiptPage() {
+  const { settings } = useSettings();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [quota, setQuota] = useState<ReceiptQuota | null>(null);
@@ -60,6 +62,11 @@ export default function ScanReceiptPage() {
       .catch(() => setError("No se pudo conectar con la API."))
       .finally(() => setLoading(false));
   }, []);
+
+  // La cuenta predeterminada de Configuración puede llegar después que las cuentas.
+  useEffect(() => {
+    if (accounts.some((a) => a.id === settings.default_account_id)) setAccountId(String(settings.default_account_id));
+  }, [accounts, settings.default_account_id]);
 
   useEffect(
     () => () => {

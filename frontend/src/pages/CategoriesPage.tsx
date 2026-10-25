@@ -5,6 +5,7 @@ import type { BudgetStatus } from "../api/stats";
 import type { Category, TransactionType } from "../api/types";
 import CategoryFormModal from "../components/CategoryFormModal";
 import { CloseIcon, PencilIcon, PlusIcon } from "../components/Icons";
+import { useSettings } from "../context/settingsContext";
 import { budgetStatusFor } from "../utils/budget";
 import { formatCLP } from "../utils/format";
 
@@ -23,6 +24,7 @@ const SUGGESTED_EXPENSE = [
 const SUGGESTED_INCOME = ["Sueldo", "Negocio propio", "Otros ingresos"];
 
 export default function CategoriesPage() {
+  const { settings } = useSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +151,7 @@ export default function CategoriesPage() {
               {expenseCategories.map((c) => {
                 const spent = spentById.get(c.id) ?? 0;
                 const pct = c.monthly_budget ? (spent / c.monthly_budget) * 100 : 0;
-                const status = budgetStatusFor(pct);
+                const status = budgetStatusFor(pct, settings.budget_alert_pct);
                 return (
                   <li key={c.id} className="category-row">
                     <div className="category-row-main">

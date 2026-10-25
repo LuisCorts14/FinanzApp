@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import type { BudgetStatus } from "../api/stats";
+import { useSettings } from "../context/settingsContext";
 import { budgetStatusFor } from "../utils/budget";
 import { formatCLP } from "../utils/format";
 
 const STATUS_ICON = { good: "✓", warning: "!", critical: "!" } as const;
 
 export default function BudgetsCard({ data }: { data: BudgetStatus[] }) {
+  const { settings } = useSettings();
   if (data.length === 0) {
     return (
       <p className="empty-state">
@@ -19,7 +21,7 @@ export default function BudgetsCard({ data }: { data: BudgetStatus[] }) {
     <div className="budgets-list">
       {data.map((b) => {
         const pct = b.monthly_budget > 0 ? (b.spent / b.monthly_budget) * 100 : 0;
-        const status = budgetStatusFor(pct);
+        const status = budgetStatusFor(pct, settings.budget_alert_pct);
         const remaining = b.monthly_budget - b.spent;
         return (
           <div className="budget-row" key={b.category_id}>

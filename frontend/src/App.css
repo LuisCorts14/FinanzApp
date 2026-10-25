@@ -3374,3 +3374,133 @@ a.avatar.active {
 .password-field input {
   width: 100%;
 }
+
+/* Configuración */
+
+.settings-page {
+  max-width: 900px;
+}
+
+.settings-section {
+  padding: 8px 24px;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid var(--gridline);
+}
+
+.settings-text h2 {
+  margin: 0 0 6px;
+}
+
+.settings-text p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.settings-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-control select {
+  width: 100%;
+}
+
+.settings-control .button-secondary {
+  align-self: flex-start;
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--gridline);
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.range-row input[type="range"] {
+  flex: 1;
+  padding: 0;
+  border: none;
+  accent-color: var(--primary);
+}
+
+.range-value {
+  min-width: 48px;
+  text-align: right;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.split-bar {
+  display: flex;
+  gap: 2px;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+}
+
+.split-bar span {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.split-needs {
+  background: #3b82c6;
+}
+
+.split-wants {
+  background: var(--series-expense);
+}
+
+.split-savings {
+  background: var(--series-income);
+}
+
+.tip-card-muted {
+  background: var(--surface);
+  border: 1px dashed var(--baseline);
+}
+
+.tip-card-warning {
+  background: #fdf0dc;
+}
+
+.tip-card-warning strong {
+  color: var(--status-warning);
+}
+
+@media (max-width: 760px) {
+  .settings-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .settings-section {
+    padding: 4px 16px;
+  }
+}

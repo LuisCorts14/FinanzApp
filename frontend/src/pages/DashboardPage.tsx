@@ -13,8 +13,11 @@ import TransactionsTable from "../components/TransactionsTable";
 import CategoryDonutCard from "../components/charts/CategoryDonutCard";
 import WeeklyBarsChart from "../components/charts/WeeklyBarsChart";
 import { useAuth } from "../context/AuthContext";
-import { formatCLP, percentChange } from "../utils/format";
+import { useSettings } from "../context/settingsContext";
+import { formatCLP, formatShortDate, percentChange } from "../utils/format";
 import { getCurrentMonthKey, monthName, shiftMonth } from "../utils/month";
+import { daysUntilPayday, nextPayday } from "../utils/payday";
+import { toISODate } from "../utils/savings";
 
 function DeltaText({ value, goodWhenUp }: { value: number | null; goodWhenUp: boolean }) {
   if (value === null) return <span className="kpi-delta kpi-delta-neutral">Sin datos del mes anterior</span>;
@@ -28,15 +31,53 @@ function DeltaText({ value, goodWhenUp }: { value: number | null; goodWhenUp: bo
   );
 }
 
-function savingsMessage(income: number, balance: number): string {
+function savingsMessage(income: number, balance: number, target: number): string {
   if (income === 0 && balance === 0) return "Registra tus ingresos para ver cuánto ahorras";
   if (income === 0) return "Aún no registras ingresos este mes";
   if (balance < 0) return `Gastaste ${formatCLP(-balance)} más de lo que ganaste`;
-  return `Ahorras el ${Math.round((balance / income) * 100)}% de tus ingresos`;
+  const rate = Math.round((balance / income) * 100);
+  if (target > 0 && rate >= target) return `Ahorras el ${rate}% de tus ingresos: ¡cumples tu meta del ${target}%!`;
+  if (target > 0) return `Ahorras el ${rate}% de tus ingresos · tu meta es ${target}%`;
+  return `Ahorras el ${rate}% de tus ingresos`;
+}
+
+// Cuánto se puede gastar por día hasta el próximo sueldo, con lo que queda del mes.
+function PaydayTip({ payday, balance }: { payday: number | null; balance: number }) {
+  if (!payday) {
+    return (
+      <div className="tip-card tip-card-muted">
+        <strong>¿Cuándo te pagan?</strong> Configura tu <Link to="/configuracion">día de pago</Link> y te diremos cuánto
+        puedes gastar por día hasta el próximo sueldo.
+      </div>
+    );
+  }
+  const days = daysUntilPayday(payday);
+  const when = formatShortDate(toISODate(nextPayday(payday)));
+  const dayWord = days === 1 ? "día" : "días";
+  if (balance <= 0) {
+    return (
+      <div className="tip-card tip-card-warning">
+        <strong>
+          Faltan {days} {dayWord} para tu sueldo ({when}).
+        </strong>{" "}
+        Este mes ya gastaste todo lo que entró: evita gastos que no sean necesarios hasta entonces.
+      </div>
+    );
+  }
+  return (
+    <div className="tip-card">
+      <strong>
+        Faltan {days} {dayWord} para tu sueldo ({when}).
+      </strong>{" "}
+      Para no gastar más de lo que te entró este mes, puedes gastar hasta <strong>{formatCLP(balance / days)}</strong>{" "}
+      por día.
+    </div>
+  );
 }
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { settings } = useSettings();
   const [month, setMonth] = useState(getCurrentMonthKey());
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -156,11 +197,21 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="kpi-value">{formatCLP(balance)}</div>
-          <span className={`kpi-delta ${balance < 0 ? "kpi-delta-warn" : "kpi-delta-accent"}`}>
-            {savingsMessage(income, balance)}
+          <span
+            className={`kpi-delta ${
+              balance < 0 || (income > 0 && (balance / income) * 100 < settings.savings_target_pct)
+                ? "kpi-delta-warn"
+                : "kpi-delta-accent"
+            }`}
+          >
+            {savingsMessage(income, balance, settings.savings_target_pct)}
           </span>
         </div>
       </div>
+
+      {month === getCurrentMonthKey() && accounts.length > 0 && (
+        <PaydayTip payday={settings.payday} balance={balance} />
+      )}
 
       <div className="dash-grid">
         <section className="card">

@@ -23,6 +23,7 @@ Mucha gente no sabe con certeza a dónde se le va el dinero cada mes. Las apps d
 - **Reportes:** tasa de ahorro, estado de los presupuestos, gastos por categoría (barras, círculo o tabla) e ingresos vs. gastos de los últimos 12 meses.
 - **Cuentas de usuario:** registro e inicio de sesión con JWT y recuperación de contraseña por correo. Cada persona ve solo sus datos.
 - **Mi perfil:** editar nombre y email (el email pide la contraseña actual), cambiar la contraseña cerrando las sesiones de otros dispositivos, ver un resumen de tus datos y eliminar la cuenta con todo lo asociado.
+- **Configuración:** día de pago (el Dashboard calcula cuánto puedes gastar por día hasta el próximo sueldo), meta de ahorro mensual con una guía 50/30/20, umbral de aviso de los presupuestos y cuenta predeterminada. También permite **exportar todos tus movimientos a CSV** (abre bien en Excel en español).
 - **Multimoneda:** cuentas en USD u otras monedas, convertidas a CLP con tasas de cambio en caché.
 
 ## Capturas
@@ -110,7 +111,7 @@ Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se impr
 
 ## Tests
 
-El backend tiene una suite de **pytest** (61 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
+El backend tiene una suite de **pytest** (67 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -141,7 +142,7 @@ En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la
 
 - Tests de componentes en el frontend
 - Deploy público con una cuenta demo
-- Configuración, notificaciones y consejos personalizados en el Dashboard
+- Notificaciones y más consejos personalizados en el Dashboard
 
 ## Autor
 

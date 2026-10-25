@@ -12,6 +12,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Para que el frontend pueda leer el nombre del archivo al exportar el CSV.
+    expose_headers=["Content-Disposition"],
 )
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)

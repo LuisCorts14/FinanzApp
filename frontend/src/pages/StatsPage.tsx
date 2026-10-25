@@ -7,10 +7,12 @@ import BudgetsCard from "../components/BudgetsCard";
 import MonthPicker from "../components/MonthPicker";
 import ExpensesByCategoryChart from "../components/charts/ExpensesByCategoryChart";
 import MonthlyDivergingChart from "../components/charts/MonthlyDivergingChart";
+import { useSettings } from "../context/settingsContext";
 import { formatCLP } from "../utils/format";
 import { getCurrentMonthKey, monthName } from "../utils/month";
 
 export default function StatsPage() {
+  const { settings } = useSettings();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [expensesByCategory, setExpensesByCategory] = useState<CategoryTotal[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary[]>([]);
@@ -84,7 +86,7 @@ export default function StatsPage() {
                 {savingsRate === null
                   ? "Registra tus ingresos para ver tu tasa de ahorro"
                   : savingsRate >= 0
-                    ? `Este mes ahorraste el ${savingsRate}% de tus ingresos`
+                    ? `Este mes ahorraste el ${savingsRate}% de tus ingresos (meta: ${settings.savings_target_pct}%)`
                     : `Este mes gastaste ${Math.abs(savingsRate)}% más de lo que ganaste`}
               </span>
             </div>

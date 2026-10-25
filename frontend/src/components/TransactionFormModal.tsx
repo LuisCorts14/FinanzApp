@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { createTransaction, updateTransaction } from "../api/transactions";
 import type { Account, Category, Transaction, TransactionType, Transfer } from "../api/types";
 import { CloseIcon } from "./Icons";
+import { useSettings } from "../context/settingsContext";
 import TransferForm from "./TransferForm";
 
 interface TransactionFormModalProps {
@@ -41,8 +42,11 @@ export default function TransactionFormModal({
 
   const [isTransfer, setIsTransfer] = useState(Boolean(transfer || transferToAccountId));
   const [type, setType] = useState<TransactionType>(initialType);
+  const { settings } = useSettings();
+  // Cuenta inicial: la de la transacción, la fija, la predeterminada de Configuración o la primera.
+  const preferredAccount = accounts.find((a) => a.id === settings.default_account_id) ?? accounts[0];
   const [accountId, setAccountId] = useState(
-    String(transaction?.account_id ?? fixedAccountId ?? accounts[0]?.id ?? ""),
+    String(transaction?.account_id ?? fixedAccountId ?? preferredAccount?.id ?? ""),
   );
   const [categoryId, setCategoryId] = useState(
     transaction ? String(transaction.category.id) : firstOfType(initialType),

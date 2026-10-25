@@ -4,6 +4,7 @@ import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "reac
 import { useAuth } from "../context/AuthContext";
 import { getInitials } from "../utils/user";
 import BrandLogo from "./BrandLogo";
+import SettingsProvider from "./SettingsProvider";
 import {
   BellIcon,
   ChartIcon,
@@ -34,7 +35,10 @@ const MAIN_LINKS = [
   { to: "/escanear", label: "Escanear boleta", icon: ScanIcon },
 ];
 
-const ACCOUNT_LINKS = [{ to: "/perfil", label: "Mi perfil", icon: UserIcon }];
+const ACCOUNT_LINKS = [
+  { to: "/perfil", label: "Mi perfil", icon: UserIcon },
+  { to: "/configuracion", label: "Configuración", icon: SettingsIcon },
+];
 
 function readCollapsed(): boolean {
   try {
@@ -42,16 +46,6 @@ function readCollapsed(): boolean {
   } catch {
     return false;
   }
-}
-
-function SoonItem({ icon: IconComponent, label }: { icon: typeof UserIcon; label: string }) {
-  return (
-    <span className="sidebar-link sidebar-link-disabled" title={`${label} — próximamente`}>
-      <IconComponent />
-      <span className="sidebar-link-label">{label}</span>
-      <span className="soon-badge">Pronto</span>
-    </span>
-  );
 }
 
 export default function AppLayout({ children }: { children?: ReactNode }) {
@@ -164,7 +158,6 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
                 <span className="sidebar-link-label">{label}</span>
               </NavLink>
             ))}
-            <SoonItem icon={SettingsIcon} label="Configuración" />
             <button
               type="button"
               className="sidebar-link"
@@ -190,7 +183,9 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
 
       <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
 
-      <main className="app-main">{children ?? <Outlet />}</main>
+      <main className="app-main">
+        <SettingsProvider>{children ?? <Outlet />}</SettingsProvider>
+      </main>
     </div>
   );
 }

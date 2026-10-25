@@ -14,6 +14,7 @@ import SavingsGoalsPage from "./pages/SavingsGoalsPage";
 import SavingsGoalDetailPage from "./pages/SavingsGoalDetailPage";
 import ScanReceiptPage from "./pages/ScanReceiptPage";
 import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/ahorros/:id" element={<SavingsGoalDetailPage />} />
           <Route path="/escanear" element={<ScanReceiptPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
+          <Route path="/configuracion" element={<SettingsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
