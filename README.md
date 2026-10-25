@@ -1,5 +1,7 @@
 # FinanzApp
 
+[![CI](https://github.com/LuisCorts14/FinanzApp/actions/workflows/ci.yml/badge.svg)](https://github.com/LuisCorts14/FinanzApp/actions/workflows/ci.yml)
+
 **Finanzas personales para personas que nunca han llevado sus cuentas.** FinanzApp ayuda a registrar ingresos y gastos, ponerse límites por categoría y ahorrar para metas con un plan concreto, sin planillas ni jerga financiera. Pensada para Chile: montos en pesos chilenos y un catálogo de bancos, tarjetas y billeteras locales.
 
 ![Dashboard de FinanzApp](docs/screenshots/dashboard.png)
@@ -104,6 +106,19 @@ python scripts/seed_demo_data.py tu-email@ejemplo.com
 
 Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se imprime en la consola del backend.
 
+## Tests
+
+El backend tiene una suite de **pytest** (42 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Los tests usan su propia base de datos `finanzapp_test` (se crea sola en el mismo Postgres de Docker) y se niegan a correr contra una base cuyo nombre no termine en `_test`, así nunca tocan los datos de desarrollo. Las tasas de cambio y el envío de correos se reemplazan por versiones falsas, sin llamadas a internet.
+
+En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la suite de pytest, el lint y el build del frontend.
+
 ## Decisiones de diseño
 
 - **El saldo se calcula, no se edita.** El saldo de una cuenta solo cambia a través de sus movimientos (crear, editar o borrar), así nunca se desincroniza del historial.
@@ -118,7 +133,7 @@ Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se impr
 
 ## Próximos pasos
 
-- Tests automatizados (pytest para la API y tests de componentes en el frontend)
+- Tests de componentes en el frontend
 - Deploy público con una cuenta demo
 - Escanear boletas, perfil de usuario y notificaciones
 

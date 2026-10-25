@@ -7,7 +7,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.db.base import Base
-from app.models import Account, Category, PasswordResetToken, SavingsGoal, Transaction, User  # noqa: F401 - registra los modelos en Base.metadata
+import app.models  # noqa: F401 - importa todos los modelos para registrarlos en Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

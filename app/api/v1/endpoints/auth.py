@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -29,6 +29,11 @@ from app.schemas.user import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 RESET_TOKEN_EXPIRE_MINUTES = 30
+
+
+def _utcnow() -> datetime:
+    # La columna guarda fechas UTC sin zona horaria.
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -77,7 +82,7 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
         reset_token = PasswordResetToken(
             user_id=user.id,
             token_hash=hash_reset_token(raw_token),
-            expires_at=datetime.utcnow() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
+            expires_at=_utcnow() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
         )
         db.add(reset_token)
         db.commit()
@@ -99,7 +104,7 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
         select(PasswordResetToken).where(PasswordResetToken.token_hash == token_hash)
     )
 
-    now = datetime.utcnow()
+    now = _utcnow()
     if reset_token is None or reset_token.used_at is not None or reset_token.expires_at < now:
         raise invalid_token
 
