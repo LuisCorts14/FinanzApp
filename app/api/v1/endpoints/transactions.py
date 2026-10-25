@@ -12,6 +12,7 @@ from app.models.category import Category
 from app.models.enums import TransactionType
 from app.models.transaction import Transaction
 from app.models.user import User
+from app.services.balances import adjust_balance
 from app.schemas.transaction import TransactionCreate, TransactionRead, TransactionUpdate
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -53,7 +54,7 @@ def create_transaction(
     category = _get_owned_category_or_404(db, transaction_in.category_id, current_user)
 
     transaction = Transaction(**transaction_in.model_dump())
-    account.balance += _signed_amount(category.type, transaction.amount)
+    adjust_balance(db, account.id, _signed_amount(category.type, transaction.amount))
 
     db.add(transaction)
     db.commit()
@@ -98,9 +99,8 @@ def update_transaction(
 ):
     transaction = _get_owned_transaction_or_404(db, transaction_id, current_user)
 
-    account = transaction.account
     old_category = db.get(Category, transaction.category_id)
-    account.balance -= _signed_amount(old_category.type, transaction.amount)
+    adjust_balance(db, transaction.account_id, -_signed_amount(old_category.type, transaction.amount))
 
     update_data = transaction_in.model_dump(exclude_unset=True)
     new_category = (
@@ -112,7 +112,7 @@ def update_transaction(
     for field, value in update_data.items():
         setattr(transaction, field, value)
 
-    account.balance += _signed_amount(new_category.type, transaction.amount)
+    adjust_balance(db, transaction.account_id, _signed_amount(new_category.type, transaction.amount))
 
     db.commit()
     db.refresh(transaction)
@@ -125,9 +125,8 @@ def delete_transaction(
 ):
     transaction = _get_owned_transaction_or_404(db, transaction_id, current_user)
 
-    account = transaction.account
     category = db.get(Category, transaction.category_id)
-    account.balance -= _signed_amount(category.type, transaction.amount)
+    adjust_balance(db, transaction.account_id, -_signed_amount(category.type, transaction.amount))
 
     db.delete(transaction)
     db.commit()

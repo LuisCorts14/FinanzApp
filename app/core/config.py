@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "FinanzApp <onboarding@resend.dev>"
 
+    # Escaneo de boletas con Claude: sin API key, la función queda desactivada.
+    ANTHROPIC_API_KEY: str = ""
+    RECEIPT_MODEL: str = "claude-opus-5-5"
+    RECEIPT_SCANS_PER_DAY: int = 10
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 

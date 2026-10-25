@@ -15,6 +15,7 @@ Mucha gente no sabe con certeza a dónde se le va el dinero cada mes. Las apps d
 - **Dashboard del mes:** ingresos, gastos y balance con variación respecto al mes anterior, porcentaje de ahorro, gastos por categoría, ingresos vs. gastos por semana y últimas transacciones.
 - **Cuentas con bancos de Chile:** al crear una cuenta eliges tu institución (BancoEstado, Banco de Chile, Santander, MACH, Tenpo, CMR...) y solo ves sus productos (CuentaRUT, Cuenta Corriente, tarjeta de crédito...). El tipo y la moneda de la cuenta salen del producto, y cada cuenta se puede editar después para cambiar su institución o producto.
 - **Tarjetas de crédito con cupo:** la deuda se muestra en negativo, junto al cupo usado y disponible y un consejo según el uso (mantenerse bajo el 30%, alerta desde el 80%).
+- **Escanear boleta con IA:** tomas una foto y Claude lee el comercio, la fecha, el total y cada producto, asignándolo a una de tus categorías. La app agrupa los montos por categoría y te propone los gastos (p. ej. "Comida $3.280" y "Hogar $12.180" de una misma boleta del supermercado); tú revisas y confirmas antes de guardar. La foto no se guarda y hay un límite diario de escaneos por persona.
 - **Transacciones:** registro, edición y eliminación con filtros por mes y tipo, y un buscador por descripción o categoría. El saldo de cada cuenta se actualiza solo.
 - **Transferencias entre cuentas:** pagar la tarjeta desde la cuenta corriente, mandar plata a la cuenta de ahorro o sacar efectivo. Mueven los saldos de ambas cuentas pero no cuentan como ingreso ni como gasto, así los reportes no se inflan. Soportan cuentas con distinta moneda, y cada tarjeta tiene un atajo "Pagar tarjeta".
 - **Categorías y presupuestos:** cada categoría de gasto puede tener un límite mensual, con una barra que pasa de verde a amarillo (80%) y rojo (excedido).
@@ -43,7 +44,7 @@ Mucha gente no sabe con certeza a dónde se le va el dinero cada mes. Las apps d
 
 ## Stack
 
-**Backend:** Python 3.12 · FastAPI · SQLAlchemy 2.0 · Pydantic v2 · PostgreSQL 16 · Alembic · JWT (PyJWT + bcrypt) · Resend (correos)
+**Backend:** Python 3.12 · FastAPI · SQLAlchemy 2.0 · Pydantic v2 · PostgreSQL 16 · Alembic · JWT (PyJWT + bcrypt) · Resend (correos) · Claude API (lectura de boletas)
 **Frontend:** React 19 · TypeScript · Vite · React Router · Axios. Sin librerías de UI ni de gráficos: los componentes y gráficos están hechos a mano con CSS y SVG.
 **Infra local:** Docker Compose (Postgres)
 
@@ -104,11 +105,11 @@ Abre `http://localhost:5173`.
 python scripts/seed_demo_data.py tu-email@ejemplo.com
 ```
 
-Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se imprime en la consola del backend.
+Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se imprime en la consola del backend. Para **escanear boletas**, agrega tu `ANTHROPIC_API_KEY` (de [console.anthropic.com](https://console.anthropic.com)) al `.env`; sin ella, esa sección aparece como no disponible y el resto de la app funciona igual.
 
 ## Tests
 
-El backend tiene una suite de **pytest** (42 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
+El backend tiene una suite de **pytest** (53 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -125,6 +126,8 @@ En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la
 - **La categoría define si es ingreso o gasto.** La transacción no tiene un campo de tipo propio, así que no se puede, por ejemplo, registrar "Comida" como un ingreso por error.
 - **La moneda de una cuenta con movimientos no se cambia.** Al editar, el backend rechaza un cambio de producto que implique otra moneda si la cuenta ya tiene transacciones, porque sus montos quedarían mal interpretados.
 - **Las transferencias son una entidad propia.** No se modelan como un gasto más un ingreso con categoría, sino en su propia tabla. Así nunca aparecen en reportes ni presupuestos, y borrar una revierte los saldos de ambas cuentas de una sola vez.
+- **La IA propone, la persona decide.** El escaneo de boletas usa salida estructurada (JSON Schema) y el backend no confía en lo que devuelve el modelo: descarta ids de categorías que no son de esa persona y fechas inválidas. Nada se guarda sin que la persona revise y confirme.
+- **Saldos atómicos.** El saldo se ajusta con `UPDATE ... SET balance = balance + x` en la base de datos, no leyendo y escribiendo desde Python, para no perder actualizaciones cuando llegan varias solicitudes a la vez (un test de concurrencia lo cubre).
 - **El catálogo manda.** Si una cuenta se crea desde un producto del catálogo, el backend fija el tipo y la moneda según el producto, aunque el cliente envíe otros valores. Es una lista mantenida a mano, porque no existe una API pública con los productos bancarios de Chile.
 - **Máximo 3 categorías de ingreso.** Es una decisión de producto: la mayoría de las personas tiene una o dos fuentes de ingreso, y limitar las categorías evita que se desordenen. Los gastos no tienen límite.
 - **El plan de ahorro parte desde lo que ya tenías.** El ritmo de una meta se mide contra una línea que va desde lo ahorrado al crearla hasta el objetivo. Así una meta nueva con plata ya guardada aparece "al día" y no "adelantada" por todo ese monto.
@@ -135,7 +138,7 @@ En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la
 
 - Tests de componentes en el frontend
 - Deploy público con una cuenta demo
-- Escanear boletas, perfil de usuario y notificaciones
+- Perfil de usuario, notificaciones y consejos personalizados en el Dashboard
 
 ## Autor
 

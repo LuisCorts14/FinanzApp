@@ -12,6 +12,7 @@ import MovementsPage from "./pages/MovementsPage";
 import StatsPage from "./pages/StatsPage";
 import SavingsGoalsPage from "./pages/SavingsGoalsPage";
 import SavingsGoalDetailPage from "./pages/SavingsGoalDetailPage";
+import ScanReceiptPage from "./pages/ScanReceiptPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/estadisticas" element={<StatsPage />} />
           <Route path="/ahorros" element={<SavingsGoalsPage />} />
           <Route path="/ahorros/:id" element={<SavingsGoalDetailPage />} />
+          <Route path="/escanear" element={<ScanReceiptPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

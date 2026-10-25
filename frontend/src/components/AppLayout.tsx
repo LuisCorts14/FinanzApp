@@ -30,6 +30,7 @@ const MAIN_LINKS = [
   { to: "/categories", label: "Categorías", icon: LayersIcon },
   { to: "/estadisticas", label: "Reportes", icon: ChartIcon },
   { to: "/ahorros", label: "Metas de ahorro", icon: TargetIcon },
+  { to: "/escanear", label: "Escanear boleta", icon: ScanIcon },
 ];
 
 function readCollapsed(): boolean {
@@ -152,7 +153,6 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
                 <span className="sidebar-link-label">{label}</span>
               </NavLink>
             ))}
-            <SoonItem icon={ScanIcon} label="Escanear boleta" />
 
             <hr className="sidebar-divider" />
 

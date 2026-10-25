@@ -11,6 +11,7 @@ from app.models.account import Account
 from app.models.transfer import Transfer
 from app.models.user import User
 from app.schemas.transfer import TransferCreate, TransferRead, TransferUpdate
+from app.services.balances import adjust_balance
 
 router = APIRouter(prefix="/transfers", tags=["transfers"])
 
@@ -40,10 +41,10 @@ def _resolve_to_amount(source: Account, target: Account, amount: float, to_amoun
     return to_amount
 
 
-def _apply(transfer: Transfer, sign: int) -> None:
+def _apply(db: Session, transfer: Transfer, sign: int) -> None:
     """sign=1 aplica la transferencia a los saldos; sign=-1 la revierte."""
-    transfer.from_account.balance -= sign * Decimal(str(transfer.amount))
-    transfer.to_account.balance += sign * Decimal(str(transfer.to_amount))
+    adjust_balance(db, transfer.from_account_id, -sign * Decimal(str(transfer.amount)))
+    adjust_balance(db, transfer.to_account_id, sign * Decimal(str(transfer.to_amount)))
 
 
 @router.post("", response_model=TransferRead, status_code=status.HTTP_201_CREATED)
@@ -63,7 +64,7 @@ def create_transfer(
     data["to_amount"] = _resolve_to_amount(source, target, data["amount"], data["to_amount"])
     transfer = Transfer(**data)
     transfer.from_account, transfer.to_account = source, target
-    _apply(transfer, 1)
+    _apply(db, transfer, 1)
 
     db.add(transfer)
     db.commit()
@@ -100,7 +101,7 @@ def update_transfer(
     current_user: User = Depends(get_current_user),
 ):
     transfer = _get_owned_transfer_or_404(db, transfer_id, current_user)
-    _apply(transfer, -1)
+    _apply(db, transfer, -1)
 
     data = transfer_in.model_dump(exclude_unset=True)
     for field, value in data.items():
@@ -111,7 +112,7 @@ def update_transfer(
             transfer.from_account, transfer.to_account, float(transfer.amount), requested
         )
 
-    _apply(transfer, 1)
+    _apply(db, transfer, 1)
     db.commit()
     db.refresh(transfer)
     return transfer
@@ -122,6 +123,6 @@ def delete_transfer(
     transfer_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     transfer = _get_owned_transfer_or_404(db, transfer_id, current_user)
-    _apply(transfer, -1)
+    _apply(db, transfer, -1)
     db.delete(transfer)
     db.commit()
