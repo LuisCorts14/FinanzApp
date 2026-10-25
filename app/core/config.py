@@ -1,3 +1,6 @@
+import os
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -5,6 +8,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "FinanzApp"
     API_V1_PREFIX: str = "/api/v1"
     DATABASE_URL: str
+    # Orígenes permitidos por CORS, separados por coma (en producción: la URL del frontend en Vercel).
+    CORS_ORIGINS: str = "http://localhost:5173"
+    # Email de la cuenta demo pública ("Probar la demo"); vacío = sin demo.
+    DEMO_EMAIL: str = ""
 
     SECRET_KEY: str = "dev-only-secret-change-me"
     JWT_ALGORITHM: str = "HS256"
@@ -21,6 +28,21 @@ class Settings(BaseSettings):
     RECEIPT_SCANS_PER_DAY: int = 10
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _sqlalchemy_scheme(cls, value: str) -> str:
+        # Algunos proveedores (Neon/Vercel/Heroku) entregan "postgres://", que SQLAlchemy no acepta.
+        return "postgresql://" + value.removeprefix("postgres://") if value.startswith("postgres://") else value
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip().rstrip("/") for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
+    @property
+    def is_serverless(self) -> bool:
+        # Vercel define VERCEL=1 en sus funciones.
+        return os.environ.get("VERCEL") == "1"
 
 
 settings = Settings()

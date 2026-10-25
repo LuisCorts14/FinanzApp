@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import heroPreview from "../assets/hero-preview.png";
 import BrandLogo from "../components/BrandLogo";
+import DemoButton from "../components/DemoButton";
+import { DEMO_ENABLED } from "../utils/demo";
 import { ChartIcon, DashboardIcon, LayersIcon, TargetIcon, TransactionsIcon, WalletIcon } from "../components/Icons";
 
 const FEATURES = [
@@ -80,9 +82,13 @@ export default function LandingPage() {
             <Link to="/register" className="landing-button landing-button-primary landing-button-lg">
               Crear cuenta gratis
             </Link>
-            <Link to="/login" className="landing-button landing-button-secondary landing-button-lg">
-              Ya tengo cuenta
-            </Link>
+            {DEMO_ENABLED ? (
+              <DemoButton className="landing-button landing-button-secondary landing-button-lg" />
+            ) : (
+              <Link to="/login" className="landing-button landing-button-secondary landing-button-lg">
+                Ya tengo cuenta
+              </Link>
+            )}
           </div>
           <p className="landing-trust">Gratis · En pesos chilenos · Con los bancos de Chile</p>
         </div>
@@ -145,10 +151,16 @@ export default function LandingPage() {
 
       <section className="landing-section landing-final-cta">
         <h2>Empieza hoy a saber a dónde va tu plata</h2>
-        <p>Crear tu cuenta toma menos de un minuto.</p>
-        <Link to="/register" className="landing-button landing-button-primary landing-button-lg">
-          Crear cuenta gratis
-        </Link>
+        <p>
+          Crear tu cuenta toma menos de un minuto.
+          {DEMO_ENABLED && " O mira primero una cuenta de ejemplo con 6 meses de datos."}
+        </p>
+        <div className="landing-cta-row landing-cta-center">
+          <Link to="/register" className="landing-button landing-button-primary landing-button-lg">
+            Crear cuenta gratis
+          </Link>
+          <DemoButton className="landing-button landing-button-secondary landing-button-lg" />
+        </div>
       </section>
 
       <footer className="landing-footer">

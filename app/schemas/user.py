@@ -22,6 +22,7 @@ class UserRead(BaseModel):
     id: int
     email: EmailStr
     full_name: str | None
+    is_demo: bool = False
     created_at: datetime
 
 

@@ -50,6 +50,14 @@ def _wrong_password() -> HTTPException:
     return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña actual no es correcta")
 
 
+def _forbid_demo(user: User) -> None:
+    if user.is_demo:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Esta es la cuenta demo: no se puede cambiar su acceso ni eliminarla. Crea tu propia cuenta gratis.",
+        )
+
+
 def _utcnow() -> datetime:
     # La columna guarda fechas UTC sin zona horaria.
     return datetime.now(UTC).replace(tzinfo=None)
@@ -94,7 +102,7 @@ def read_me(current_user: User = Depends(get_current_user)):
 def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == payload.email))
 
-    if user is not None:
+    if user is not None and not user.is_demo:
         raw_token = generate_reset_token()
         reset_token = PasswordResetToken(
             user_id=user.id,
@@ -140,6 +148,7 @@ def update_me(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _forbid_demo(current_user)
     data = payload.model_dump(exclude_unset=True)
 
     if "full_name" in data:
@@ -165,6 +174,7 @@ def change_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _forbid_demo(current_user)
     if not verify_password(payload.current_password, current_user.hashed_password):
         raise _wrong_password()
     current_user.hashed_password = hash_password(payload.new_password)
@@ -200,8 +210,18 @@ def delete_account(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _forbid_demo(current_user)
     if not verify_password(payload.password, current_user.hashed_password):
         raise _wrong_password()
     # Las llaves foráneas tienen ON DELETE CASCADE: se borran cuentas, movimientos, categorías y metas.
     db.delete(current_user)
     db.commit()
+
+
+@router.post("/demo", response_model=TokenResponse)
+def demo_login(db: Session = Depends(get_db)):
+    """Entra a la cuenta demo sin contraseña ("Probar la demo"). Solo si está configurada y marcada como demo."""
+    user = db.scalar(select(User).where(User.email == settings.DEMO_EMAIL)) if settings.DEMO_EMAIL else None
+    if user is None or not user.is_demo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La demo no está disponible")
+    return _session(user)

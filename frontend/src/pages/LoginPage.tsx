@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
+import DemoButton from "../components/DemoButton";
+import { DEMO_ENABLED } from "../utils/demo";
 import PasswordInput from "../components/PasswordInput";
 import { useAuth } from "../context/AuthContext";
 
@@ -34,6 +36,11 @@ export default function LoginPage() {
       footer={
         <>
           ¿No tienes cuenta? <Link to="/register">Créala gratis</Link>
+          {DEMO_ENABLED && (
+            <span className="auth-demo">
+              ¿Solo quieres mirar? <DemoButton className="link-button-muted" label="Entra a la demo" />
+            </span>
+          )}
         </>
       }
     >

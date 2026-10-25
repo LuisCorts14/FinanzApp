@@ -4,6 +4,7 @@ export interface User {
   id: number;
   email: string;
   full_name: string | null;
+  is_demo?: boolean;
   created_at: string;
 }
 
@@ -73,4 +74,10 @@ export async function getMySummary(): Promise<UserSummary> {
 
 export async function deleteMyAccount(password: string): Promise<void> {
   await apiClient.post("/auth/delete-account", { password });
+}
+
+// Entra a la cuenta demo pública sin contraseña.
+export async function demoLogin(): Promise<TokenResponse> {
+  const { data } = await apiClient.post<TokenResponse>("/auth/demo");
+  return data;
 }

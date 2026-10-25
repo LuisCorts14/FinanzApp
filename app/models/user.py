@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Integer, String, func
+from sqlalchemy import Boolean, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -15,6 +15,8 @@ class User(Base):
     full_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # Se incrementa al cambiar la contraseña: los tokens emitidos antes dejan de ser válidos.
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    # Cuenta demo pública: cualquiera entra con "Probar la demo", así que no se puede cambiar su acceso ni borrarla.
+    is_demo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
     # Configuración personal
     payday: Mapped[int | None] = mapped_column(Integer, nullable=True)  # día del mes en que llega el sueldo

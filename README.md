@@ -110,9 +110,28 @@ python scripts/seed_demo_data.py tu-email@ejemplo.com
 
 Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se imprime en la consola del backend. Para **escanear boletas**, agrega tu `ANTHROPIC_API_KEY` (de [console.anthropic.com](https://console.anthropic.com)) al `.env`; sin ella, esa sección aparece como no disponible y el resto de la app funciona igual.
 
+## Deploy
+
+La app corre en **Vercel** (frontend y backend, como dos proyectos del mismo repositorio) con **Neon** como base de datos PostgreSQL, todo en planes gratuitos.
+
+| Proyecto en Vercel | Root Directory | Variables de entorno |
+|---|---|---|
+| Backend (FastAPI, detectado automáticamente) | `/` (raíz) | `DATABASE_URL` (Neon), `SECRET_KEY`, `CORS_ORIGINS` (URL del frontend), `FRONTEND_URL`, `DEMO_EMAIL` |
+| Frontend (Vite) | `frontend` | `VITE_API_URL` (URL del backend + `/api/v1`), `VITE_DEMO_ENABLED=true` |
+
+El backend usa conexiones sin pool en Vercel (`NullPool`), porque cada función serverless vive poco y Neon ya trae su propio pool. Las migraciones y la cuenta demo se ejecutan contra producción desde la máquina local, con las credenciales en un `.env.production` que no se sube a git:
+
+```bash
+set -a; source .env.production; set +a   # DATABASE_URL y DEMO_EMAIL de producción
+alembic upgrade head
+python scripts/demo_account.py           # crea o reinicia la cuenta demo
+```
+
+**Cuenta demo:** el botón "Probar la demo" entra sin contraseña a una cuenta con 6 meses de datos de ejemplo. Esa cuenta no permite cambiar su nombre, email ni contraseña, ni eliminarse, para que siga disponible para todos; `scripts/demo_account.py` la reinicia y se niega a tocar cualquier cuenta que no esté marcada como demo.
+
 ## Tests
 
-El backend tiene una suite de **pytest** (76 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
+El backend tiene una suite de **pytest** (81 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -143,7 +162,6 @@ En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la
 ## Próximos pasos
 
 - Tests de componentes en el frontend
-- Deploy público con una cuenta demo
 - Más consejos personalizados en el Dashboard
 
 ## Autor

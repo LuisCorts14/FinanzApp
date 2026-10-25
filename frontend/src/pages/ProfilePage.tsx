@@ -154,122 +154,137 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="profile-grid">
-        <section className="card">
-          <h2>Datos personales</h2>
-          <form className="modal-form" onSubmit={handleProfile}>
-            <label>
-              Nombre
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="¿Cómo te llamas?"
-                maxLength={100}
-                autoComplete="name"
-              />
-            </label>
-            <label>
-              Email
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
-            </label>
-            {emailChanged && (
+      {user.is_demo && (
+        <div className="tip-card tip-card-warning">
+          <strong>Cuenta demo:</strong> puedes recorrer toda la app, pero el nombre, el email, la contraseña y la
+          eliminación de esta cuenta están bloqueados para que siga disponible para todos.
+        </div>
+      )}
+
+      <fieldset className="profile-fieldset" disabled={user.is_demo}>
+        <div className="profile-grid">
+          <section className="card">
+            <h2>Datos personales</h2>
+            <form className="modal-form" onSubmit={handleProfile}>
               <label>
-                Tu contraseña actual
+                Nombre
+                <input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="¿Cómo te llamas?"
+                  maxLength={100}
+                  autoComplete="name"
+                />
+              </label>
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </label>
+              {emailChanged && (
+                <label>
+                  Tu contraseña actual
+                  <PasswordInput
+                    value={emailPassword}
+                    onChange={(e) => setEmailPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                  <span className="field-hint">Por seguridad, cambiar el email requiere tu contraseña.</span>
+                </label>
+              )}
+              <NoticeText notice={profileNotice} />
+              <div className="modal-actions">
+                <button type="submit" disabled={savingProfile}>
+                  {savingProfile ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="card">
+            <h2>Cambiar contraseña</h2>
+            <form className="modal-form" onSubmit={handlePassword}>
+              <label>
+                Contraseña actual
                 <PasswordInput
-                  value={emailPassword}
-                  onChange={(e) => setEmailPassword(e.target.value)}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
                   autoComplete="current-password"
                   required
                 />
-                <span className="field-hint">Por seguridad, cambiar el email requiere tu contraseña.</span>
               </label>
-            )}
-            <NoticeText notice={profileNotice} />
-            <div className="modal-actions">
-              <button type="submit" disabled={savingProfile}>
-                {savingProfile ? "Guardando..." : "Guardar cambios"}
-              </button>
-            </div>
-          </form>
-        </section>
+              <label>
+                Nueva contraseña
+                <PasswordInput
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  minLength={6}
+                  autoComplete="new-password"
+                  required
+                />
+                <span className="field-hint">Mínimo 6 caracteres. Mejor una que no uses en otros sitios.</span>
+              </label>
+              <label>
+                Repite la nueva contraseña
+                <PasswordInput
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  minLength={6}
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
+              <NoticeText notice={passwordNotice} />
+              <div className="modal-actions">
+                <button type="submit" disabled={savingPassword}>
+                  {savingPassword ? "Guardando..." : "Cambiar contraseña"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </fieldset>
 
-        <section className="card">
-          <h2>Cambiar contraseña</h2>
-          <form className="modal-form" onSubmit={handlePassword}>
+      <fieldset className="profile-fieldset" disabled={user.is_demo}>
+        <section className="card danger-zone">
+          <h2>Eliminar mi cuenta</h2>
+          <p className="cell-muted">
+            Se borrarán para siempre tus cuentas, transacciones, transferencias, categorías y metas de ahorro. No se
+            puede deshacer.
+          </p>
+          <form className="danger-form" onSubmit={handleDelete}>
             <label>
-              Contraseña actual
+              Escribe tu contraseña para confirmar
               <PasswordInput
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
                 autoComplete="current-password"
                 required
               />
             </label>
-            <label>
-              Nueva contraseña
-              <PasswordInput
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                minLength={6}
-                autoComplete="new-password"
-                required
-              />
-              <span className="field-hint">Mínimo 6 caracteres. Mejor una que no uses en otros sitios.</span>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={deleteConfirmed} onChange={(e) => setDeleteConfirmed(e.target.checked)} />
+              Entiendo que perderé todos mis datos
             </label>
-            <label>
-              Repite la nueva contraseña
-              <PasswordInput
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                minLength={6}
-                autoComplete="new-password"
-                required
-              />
-            </label>
-            <NoticeText notice={passwordNotice} />
-            <div className="modal-actions">
-              <button type="submit" disabled={savingPassword}>
-                {savingPassword ? "Guardando..." : "Cambiar contraseña"}
+            <NoticeText notice={deleteNotice} />
+            <div>
+              <button
+                type="submit"
+                className="button-danger"
+                disabled={!deleteConfirmed || !deletePassword || deleting}
+              >
+                {deleting ? "Eliminando..." : "Eliminar mi cuenta"}
               </button>
             </div>
           </form>
         </section>
-      </div>
-
-      <section className="card danger-zone">
-        <h2>Eliminar mi cuenta</h2>
-        <p className="cell-muted">
-          Se borrarán para siempre tus cuentas, transacciones, transferencias, categorías y metas de ahorro. No se puede
-          deshacer.
-        </p>
-        <form className="danger-form" onSubmit={handleDelete}>
-          <label>
-            Escribe tu contraseña para confirmar
-            <PasswordInput
-              value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </label>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={deleteConfirmed} onChange={(e) => setDeleteConfirmed(e.target.checked)} />
-            Entiendo que perderé todos mis datos
-          </label>
-          <NoticeText notice={deleteNotice} />
-          <div>
-            <button type="submit" className="button-danger" disabled={!deleteConfirmed || !deletePassword || deleting}>
-              {deleting ? "Eliminando..." : "Eliminar mi cuenta"}
-            </button>
-          </div>
-        </form>
-      </section>
+      </fieldset>
     </div>
   );
 }

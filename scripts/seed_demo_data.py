@@ -65,13 +65,15 @@ def month_start(base: date, months_ago: int) -> date:
     return date(year, month, 1)
 
 
-def random_day_in_month(month_first_day: date) -> date:
+def random_day_in_month(month_first_day: date, until: date | None = None) -> date:
     if month_first_day.month == 12:
         next_month = date(month_first_day.year + 1, 1, 1)
     else:
         next_month = date(month_first_day.year, month_first_day.month + 1, 1)
-    days_in_month = (next_month - month_first_day).days
-    return month_first_day + timedelta(days=random.randint(0, days_in_month - 1))
+    last_day = next_month - timedelta(days=1)
+    if until is not None:
+        last_day = min(last_day, until)
+    return month_first_day + timedelta(days=random.randint(0, (last_day - month_first_day).days))
 
 
 def main():
@@ -102,7 +104,7 @@ def main():
         for months_ago in range(MONTHS_BACK, -1, -1):
             first_day = month_start(today, months_ago)
 
-            salary_day = first_day + timedelta(days=4)
+            salary_day = min(first_day + timedelta(days=4), today)
             salary_amount = Decimal(random.randint(700_000, 950_000))
             db.add(
                 Transaction(
@@ -125,7 +127,7 @@ def main():
                             account_id=account.id,
                             category_id=expense_categories[name].id,
                             amount=amount,
-                            date=random_day_in_month(first_day),
+                            date=random_day_in_month(first_day, until=today),
                         )
                     )
                     total_expense += amount

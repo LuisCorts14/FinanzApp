@@ -182,6 +182,25 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
       <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
 
       <main className="app-main">
+        {user?.is_demo && (
+          <div className="demo-banner" role="status">
+            <span>
+              <strong>Estás usando la cuenta demo.</strong> Los datos son de ejemplo y cualquiera puede verlos.
+            </span>
+            <a
+              href="/register"
+              className="demo-banner-cta"
+              onClick={(e) => {
+                // Salir de la demo y recargar en el registro (si no, la ruta protegida redirige a /login).
+                e.preventDefault();
+                logout();
+                window.location.assign("/register");
+              }}
+            >
+              Crear mi cuenta gratis
+            </a>
+          </div>
+        )}
         <SettingsProvider>{children ?? <Outlet />}</SettingsProvider>
       </main>
     </div>
