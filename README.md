@@ -83,7 +83,7 @@ La documentación interactiva de la API (Swagger) queda en `http://localhost:800
 
 **1. Base de datos**
 ```bash
-cp .env.example .env      # ajusta SECRET_KEY y, si quieres correos reales, RESEND_API_KEY
+cp .env.example .env      # ajusta SECRET_KEY y, si quieres correos reales, SMTP_USER/SMTP_PASSWORD
 docker compose up -d
 ```
 
@@ -111,7 +111,7 @@ Abre `http://localhost:5173`.
 python scripts/seed_demo_data.py tu-email@ejemplo.com
 ```
 
-Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se imprime en la consola del backend. Para **escanear boletas**, agrega tu `ANTHROPIC_API_KEY` (de [console.anthropic.com](https://console.anthropic.com)) al `.env`; sin ella, esa sección aparece como no disponible y el resto de la app funciona igual.
+Para enviar los correos de recuperación de contraseña, la opción gratuita es un Gmail dedicado a la app: activa la verificación en 2 pasos, crea una *contraseña de aplicación* y ponla en `SMTP_USER` / `SMTP_PASSWORD`. También funciona con Resend (`RESEND_API_KEY`), aunque para enviar a cualquier correo pide un dominio verificado. Sin ninguno, el link se imprime en la consola del backend. Para **escanear boletas**, agrega tu `ANTHROPIC_API_KEY` (de [console.anthropic.com](https://console.anthropic.com)) al `.env`; sin ella, esa sección aparece como no disponible y el resto de la app funciona igual.
 
 ## Deploy
 
@@ -121,7 +121,7 @@ En producción: frontend en [finanzapp-web-rust.vercel.app](https://finanzapp-we
 
 | Proyecto en Vercel | Root Directory | Variables de entorno |
 |---|---|---|
-| Backend (FastAPI, detectado automáticamente) | `/` (raíz) | `DATABASE_URL` (Neon), `SECRET_KEY`, `CORS_ORIGINS` (URL del frontend), `FRONTEND_URL`, `DEMO_EMAIL` |
+| Backend (FastAPI, detectado automáticamente) | `/` (raíz) | `DATABASE_URL` (Neon), `SECRET_KEY`, `CORS_ORIGINS` (URL del frontend), `FRONTEND_URL`, `DEMO_EMAIL`, `SMTP_USER`, `SMTP_PASSWORD` |
 | Frontend (Vite) | `frontend` | `VITE_API_URL` (URL del backend + `/api/v1`), `VITE_DEMO_ENABLED=true` |
 
 El backend usa conexiones sin pool en Vercel (`NullPool`), porque cada función serverless vive poco y Neon ya trae su propio pool. Las migraciones y la cuenta demo se ejecutan contra producción desde la máquina local, con las credenciales en un `.env.production` que no se sube a git:
@@ -136,7 +136,7 @@ python scripts/demo_account.py           # crea o reinicia la cuenta demo
 
 ## Tests
 
-El backend tiene una suite de **pytest** (102 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, límite de intentos, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro, la simulación del plan de deudas y aislamiento de datos entre usuarios.
+El backend tiene una suite de **pytest** (105 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, límite de intentos, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro, la simulación del plan de deudas y aislamiento de datos entre usuarios.
 
 ```bash
 pip install -r requirements-dev.txt

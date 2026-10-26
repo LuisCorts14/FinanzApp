@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     FRONTEND_URL: str = "http://localhost:5173"
+    # Correos: SMTP (p. ej. un Gmail dedicado con contraseña de aplicación) o Resend. Sin ninguno, el link
+    # de recuperación se imprime en la consola.
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 465
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "FinanzApp <onboarding@resend.dev>"
 
