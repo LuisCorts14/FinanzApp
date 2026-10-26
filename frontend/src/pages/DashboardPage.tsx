@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const load = useCallback(async () => {
+    setLoading(true);
     setError(null);
     try {
       const [accountsData, categoriesData, monthlyData, weeklyData, byCategoryData, transactionsData] =
@@ -176,8 +177,12 @@ export default function DashboardPage() {
               <ArrowUpRightIcon />
             </span>
           </div>
-          <div className="kpi-value">{formatCLP(income)}</div>
-          <DeltaText value={previous ? percentChange(income, previous.income) : null} goodWhenUp />
+          <div className="kpi-value">{loading ? <span className="skeleton skeleton-value" /> : formatCLP(income)}</div>
+          {loading ? (
+            <span className="skeleton skeleton-line" />
+          ) : (
+            <DeltaText value={previous ? percentChange(income, previous.income) : null} goodWhenUp />
+          )}
         </div>
         <div className="kpi-card">
           <div className="kpi-header">
@@ -186,8 +191,12 @@ export default function DashboardPage() {
               <ArrowDownRightIcon />
             </span>
           </div>
-          <div className="kpi-value">{formatCLP(expense)}</div>
-          <DeltaText value={previous ? percentChange(expense, previous.expense) : null} goodWhenUp={false} />
+          <div className="kpi-value">{loading ? <span className="skeleton skeleton-value" /> : formatCLP(expense)}</div>
+          {loading ? (
+            <span className="skeleton skeleton-line" />
+          ) : (
+            <DeltaText value={previous ? percentChange(expense, previous.expense) : null} goodWhenUp={false} />
+          )}
         </div>
         <div className="kpi-card kpi-card-dark">
           <div className="kpi-header">
@@ -196,7 +205,9 @@ export default function DashboardPage() {
               <WalletIcon />
             </span>
           </div>
-          <div className="kpi-value">{formatCLP(balance)}</div>
+          <div className="kpi-value">
+            {loading ? <span className="skeleton skeleton-value skeleton-dark" /> : formatCLP(balance)}
+          </div>
           <span
             className={`kpi-delta ${
               balance < 0 || (income > 0 && (balance / income) * 100 < settings.savings_target_pct)
@@ -204,12 +215,12 @@ export default function DashboardPage() {
                 : "kpi-delta-accent"
             }`}
           >
-            {savingsMessage(income, balance, settings.savings_target_pct)}
+            {loading ? "Cargando tu mes..." : savingsMessage(income, balance, settings.savings_target_pct)}
           </span>
         </div>
       </div>
 
-      {month === getCurrentMonthKey() && accounts.length > 0 && (
+      {!loading && month === getCurrentMonthKey() && accounts.length > 0 && (
         <PaydayTip payday={settings.payday} balance={balance} />
       )}
 

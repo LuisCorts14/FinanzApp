@@ -58,6 +58,14 @@ export default function TransactionFormModal({
   const [error, setError] = useState<string | null>(null);
 
   const categoriesOfType = useMemo(() => categories.filter((c) => c.type === type), [categories, type]);
+
+  // Si el modal se abrió antes de que cargaran cuentas y categorías (red lenta), se eligen al llegar.
+  useEffect(() => {
+    if (!accountId && preferredAccount) setAccountId(String(preferredAccount.id));
+  }, [accountId, preferredAccount]);
+  useEffect(() => {
+    if (!categoryId && categoriesOfType[0]) setCategoryId(String(categoriesOfType[0].id));
+  }, [categoryId, categoriesOfType]);
   // La cuenta no se puede cambiar al editar (el balance de ambas cuentas tendría que recalcularse).
   const accountLocked = isEdit || fixedAccountId !== undefined;
   const lockedAccount = accounts.find((a) => String(a.id) === accountId);

@@ -3746,3 +3746,40 @@ a.avatar.active {
     padding: 10px 16px;
   }
 }
+
+/* Cargando (skeleton) */
+
+.skeleton {
+  display: inline-block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--surface-muted) 0%, #e4e7e5 50%, var(--surface-muted) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.skeleton-value {
+  width: 60%;
+  height: 34px;
+}
+
+.skeleton-line {
+  width: 45%;
+  height: 14px;
+}
+
+.skeleton-dark {
+  background: linear-gradient(90deg, #2a2c2f 0%, #3a3d41 50%, #2a2c2f 100%);
+  background-size: 200% 100%;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

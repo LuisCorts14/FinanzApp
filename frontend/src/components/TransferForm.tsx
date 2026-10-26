@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createTransfer, updateTransfer } from "../api/transfers";
 import type { Account, Transfer } from "../api/types";
@@ -52,6 +52,13 @@ export default function TransferForm({
   const [date, setDate] = useState(transfer?.date ?? todayISO());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Si las cuentas llegaron después de abrir el formulario, se completan origen y destino.
+  useEffect(() => {
+    if (fromId || accounts.length < 2) return;
+    setFromId(firstId);
+    setToId(String(defaultToAccountId ?? accounts.find((a) => String(a.id) !== firstId)?.id ?? ""));
+  }, [accounts, fromId, firstId, defaultToAccountId]);
 
   if (accounts.length < 2) {
     return (

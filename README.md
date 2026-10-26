@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/LuisCorts14/FinanzApp/actions/workflows/ci.yml/badge.svg)](https://github.com/LuisCorts14/FinanzApp/actions/workflows/ci.yml)
 
+### 🔗 [Ver la app en vivo](https://finanzapp-web-rust.vercel.app) · entra con **"Probar la demo"**, sin registrarte
+
 **Finanzas personales para personas que nunca han llevado sus cuentas.** FinanzApp ayuda a registrar ingresos y gastos, ponerse límites por categoría y ahorrar para metas con un plan concreto, sin planillas ni jerga financiera. Pensada para Chile: montos en pesos chilenos y un catálogo de bancos, tarjetas y billeteras locales.
 
 ![Dashboard de FinanzApp](docs/screenshots/dashboard.png)
@@ -113,6 +115,8 @@ Si no configuras `RESEND_API_KEY`, el link para recuperar la contraseña se impr
 ## Deploy
 
 La app corre en **Vercel** (frontend y backend, como dos proyectos del mismo repositorio) con **Neon** como base de datos PostgreSQL, todo en planes gratuitos.
+
+En producción: frontend en [finanzapp-web-rust.vercel.app](https://finanzapp-web-rust.vercel.app) y API en [finanz-app-mocha-delta.vercel.app](https://finanz-app-mocha-delta.vercel.app/docs) (documentación interactiva en `/docs`).
 
 | Proyecto en Vercel | Root Directory | Variables de entorno |
 |---|---|---|
