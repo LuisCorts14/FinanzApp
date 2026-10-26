@@ -16,6 +16,8 @@ class AccountCreate(AccountBase):
     institution_id: str | None = None
     product_id: str | None = None
     credit_limit: float | None = Field(default=None, gt=0)
+    interest_rate: float | None = Field(default=None, ge=0, le=20)
+    minimum_payment: float | None = Field(default=None, gt=0)
 
 
 class AccountUpdate(BaseModel):
@@ -27,6 +29,8 @@ class AccountUpdate(BaseModel):
     institution_id: str | None = None
     product_id: str | None = None
     credit_limit: float | None = Field(default=None, gt=0)
+    interest_rate: float | None = Field(default=None, ge=0, le=20)
+    minimum_payment: float | None = Field(default=None, gt=0)
 
 
 class AccountRead(AccountBase):
@@ -38,6 +42,8 @@ class AccountRead(AccountBase):
     institution_name: str | None
     product_name: str | None
     credit_limit: float | None
+    interest_rate: float | None
+    minimum_payment: float | None
     balance: float
     balance_base: float
     created_at: datetime

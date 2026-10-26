@@ -1904,6 +1904,10 @@ button:disabled {
   border-top: 2px dashed var(--text-muted);
 }
 
+.legend-line-minimum {
+  border-top-color: var(--series-expense);
+}
+
 .chart-gridline {
   stroke: var(--gridline);
   stroke-width: 1;
@@ -3781,5 +3785,90 @@ a.avatar.active {
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;
+  }
+}
+
+/* Plan de deudas */
+.chart-minimum-line {
+  fill: none;
+  stroke: var(--series-expense);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.chart-minimum-dot {
+  fill: var(--series-expense);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.debt-name {
+  font-weight: 600;
+}
+
+.debt-warning {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--status-critical);
+}
+
+.debt-budget-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0 8px;
+}
+
+.debt-budget-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 260px;
+  font-weight: 500;
+}
+
+.debt-plan-headline {
+  font-size: 1.15rem;
+  margin: 20px 0 16px;
+}
+
+.debt-plan-alert {
+  margin: 20px 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fdf0e8;
+  color: var(--status-warning);
+}
+
+.debt-plan-saving,
+.debt-plan-how {
+  margin: 0 0 12px;
+}
+
+.debt-summary {
+  margin-bottom: 12px;
+}
+
+.debt-order {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 20px;
+  padding-left: 20px;
+}
+
+.debt-order li span + span {
+  margin-left: 8px;
+}
+
+@media (max-width: 640px) {
+  .debt-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .debt-summary .summary-item + .summary-item {
+    border-left: none;
+    border-top: 1px solid var(--gridline);
   }
 }

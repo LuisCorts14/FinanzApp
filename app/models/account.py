@@ -27,6 +27,9 @@ class Account(Base):
     product_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
     # Solo para tarjetas de crédito: cupo total aprobado por el banco.
     credit_limit: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # Solo para tarjetas de crédito, para el plan de deudas: tasa de interés mensual (%) y pago mínimo.
+    interest_rate: Mapped[float | None] = mapped_column(Numeric(6, 3), nullable=True)
+    minimum_payment: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     transactions: Mapped[list["Transaction"]] = relationship(

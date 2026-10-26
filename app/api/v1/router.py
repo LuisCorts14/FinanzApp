@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     auth,
     catalog,
     categories,
+    debts,
     health,
     notifications,
     receipts,
@@ -28,3 +29,4 @@ api_router.include_router(transfers.router)
 api_router.include_router(receipts.router)
 api_router.include_router(settings.router)
 api_router.include_router(notifications.router)
+api_router.include_router(debts.router)

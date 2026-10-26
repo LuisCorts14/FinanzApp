@@ -13,6 +13,8 @@ export interface Account {
   institution_name: string | null;
   product_name: string | null;
   credit_limit: number | null;
+  interest_rate: number | null;
+  minimum_payment: number | null;
   created_at: string;
 }
 
@@ -24,6 +26,8 @@ export interface AccountCreate {
   institution_id?: string | null;
   product_id?: string | null;
   credit_limit?: number | null;
+  interest_rate?: number | null;
+  minimum_payment?: number | null;
 }
 
 // El saldo no se edita: solo cambia con los movimientos.
@@ -33,6 +37,8 @@ export interface AccountUpdate {
   institution_id?: string | null;
   product_id?: string | null;
   credit_limit?: number | null;
+  interest_rate?: number | null;
+  minimum_payment?: number | null;
 }
 
 export interface Category {
@@ -143,4 +149,63 @@ export interface TransferUpdate {
   to_amount?: number | null;
   description?: string | null;
   date?: string;
+}
+
+export type DebtKind = "consumer_loan" | "cash_advance" | "store_credit" | "personal" | "other";
+export type DebtStrategy = "avalanche" | "snowball";
+
+export interface Debt {
+  id: number;
+  name: string;
+  kind: DebtKind;
+  balance: number;
+  interest_rate: number; // % mensual
+  minimum_payment: number;
+  created_at: string;
+}
+
+export interface DebtCreate {
+  name: string;
+  kind: DebtKind;
+  balance: number;
+  interest_rate: number;
+  minimum_payment: number;
+}
+
+export type DebtUpdate = Partial<DebtCreate>;
+
+// Una deuda dentro del plan: tarjeta de crédito (source "card", id de la cuenta) o deuda registrada.
+export interface PlanDebt {
+  key: string;
+  source: "card" | "debt";
+  id: number;
+  name: string;
+  kind: DebtKind | "credit_card";
+  balance: number;
+  interest_rate: number | null;
+  minimum_payment: number | null;
+  monthly_interest: number;
+  included: boolean;
+}
+
+export interface PlanScenario {
+  status: "ok" | "insufficient_budget" | "never";
+  months: number | null;
+  total_interest: number;
+  total_paid: number;
+  payoffs: { key: string; name: string; month: number }[];
+  timeline: number[]; // deuda total al terminar cada mes; el primer valor es la deuda actual
+}
+
+export interface DebtPlan {
+  monthly_budget: number;
+  budget_is_saved: boolean;
+  strategy: DebtStrategy;
+  total_balance: number;
+  total_minimum: number;
+  monthly_interest: number;
+  debts: PlanDebt[];
+  avalanche: PlanScenario;
+  snowball: PlanScenario;
+  minimum_only: PlanScenario;
 }

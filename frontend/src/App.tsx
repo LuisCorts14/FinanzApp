@@ -11,6 +11,7 @@ import CategoriesPage from "./pages/CategoriesPage";
 import MovementsPage from "./pages/MovementsPage";
 import StatsPage from "./pages/StatsPage";
 import SavingsGoalsPage from "./pages/SavingsGoalsPage";
+import DebtsPage from "./pages/DebtsPage";
 import SavingsGoalDetailPage from "./pages/SavingsGoalDetailPage";
 import ScanReceiptPage from "./pages/ScanReceiptPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/estadisticas" element={<StatsPage />} />
           <Route path="/ahorros" element={<SavingsGoalsPage />} />
           <Route path="/ahorros/:id" element={<SavingsGoalDetailPage />} />
+          <Route path="/deudas" element={<DebtsPage />} />
           <Route path="/escanear" element={<ScanReceiptPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/configuracion" element={<SettingsPage />} />

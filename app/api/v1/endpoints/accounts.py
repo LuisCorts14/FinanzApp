@@ -42,7 +42,7 @@ def create_account(
     data = account_in.model_dump()
     _apply_catalog(data)
     if data["type"] != AccountType.CREDIT_CARD:
-        data["credit_limit"] = None
+        data.update(credit_limit=None, interest_rate=None, minimum_payment=None)
 
     account = Account(**data, owner_id=current_user.id)
     db.add(account)
@@ -91,7 +91,7 @@ def update_account(
     for field, value in data.items():
         setattr(account, field, value)
     if account.type != AccountType.CREDIT_CARD:
-        account.credit_limit = None
+        account.credit_limit = account.interest_rate = account.minimum_payment = None
 
     db.commit()
     db.refresh(account)

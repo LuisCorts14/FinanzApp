@@ -116,6 +116,9 @@ def api(client, auth):
         def patch(self, path, json=None, **kw):
             return client.patch(f"/api/v1{path}", headers=auth, json=json, **kw)
 
+        def put(self, path, json=None, **kw):
+            return client.put(f"/api/v1{path}", headers=auth, json=json, **kw)
+
         def delete(self, path, **kw):
             return client.delete(f"/api/v1{path}", headers=auth, **kw)
 

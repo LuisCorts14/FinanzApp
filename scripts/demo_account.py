@@ -21,7 +21,8 @@ from app.core.security import hash_password  # noqa: E402
 from app.db.session import SessionLocal  # noqa: E402
 from app.models.account import Account  # noqa: E402
 from app.models.category import Category  # noqa: E402
-from app.models.enums import AccountType, TransactionType  # noqa: E402
+from app.models.debt import Debt  # noqa: E402
+from app.models.enums import AccountType, DebtKind, TransactionType  # noqa: E402
 from app.models.savings_contribution import SavingsContribution  # noqa: E402
 from app.models.savings_goal import SavingsGoal  # noqa: E402
 from app.models.transaction import Transaction  # noqa: E402
@@ -93,7 +94,7 @@ def main() -> None:
             return acc
 
         rut = account("CuentaRUT", AccountType.BANK, 180000, "bancoestado", "cuentarut")
-        card = account("Tarjeta CMR", AccountType.CREDIT_CARD, -95000, "banco_falabella", "tarjeta_cmr", credit_limit=Decimal(600000))
+        card = account("Tarjeta CMR", AccountType.CREDIT_CARD, -95000, "banco_falabella", "tarjeta_cmr", credit_limit=Decimal(600000), interest_rate=Decimal("2.9"), minimum_payment=Decimal(25000))
         cash = account("Efectivo", AccountType.CASH, 20000)
         savings = account("Ahorro viaje", AccountType.SAVINGS, 150000, "bancoestado", "cuenta_ahorro")
         db.flush()
@@ -165,6 +166,15 @@ def main() -> None:
             if day <= today:
                 db.add(SavingsContribution(goal_id=emergency.id, amount=Decimal(random.choice([70000, 90000, 110000])), date=day, note="Abono mensual"))
         db.add(SavingsContribution(goal_id=emergency.id, amount=Decimal(-35000), date=month_first(today, 2) + timedelta(days=18), note="Arreglo del celular"))
+
+        # Plan de deudas: un crédito de consumo y un avance, además de la tarjeta.
+        db.add_all([
+            Debt(owner_id=user.id, name="Crédito de consumo BancoEstado", kind=DebtKind.CONSUMER_LOAN.value,
+                 balance=Decimal(1350000), interest_rate=Decimal("1.6"), minimum_payment=Decimal(68000)),
+            Debt(owner_id=user.id, name="Avance en efectivo", kind=DebtKind.CASH_ADVANCE.value,
+                 balance=Decimal(220000), interest_rate=Decimal("3.4"), minimum_payment=Decimal(30000)),
+        ])
+        user.debt_monthly_budget = Decimal(180000)
 
         user.default_account_id = rut.id
         db.commit()

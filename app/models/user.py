@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Integer, String, func
+from sqlalchemy import Numeric, Boolean, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -25,4 +25,7 @@ class User(Base):
     # Sin llave foránea a propósito (users y accounts se apuntarían mutuamente): se valida al guardar y,
     # si la cuenta ya no existe, la configuración la informa como vacía.
     default_account_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Plan de deudas: cuánto puede pagar al mes y qué deuda priorizar ("avalanche" o "snowball").
+    debt_monthly_budget: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    debt_strategy: Mapped[str] = mapped_column(String(20), nullable=False, default="avalanche", server_default="avalanche")
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

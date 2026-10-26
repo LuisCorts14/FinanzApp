@@ -10,6 +10,7 @@ import {
   ChartIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CreditCardIcon,
   DashboardIcon,
   LayersIcon,
   LogoutIcon,
@@ -32,6 +33,7 @@ const MAIN_LINKS = [
   { to: "/categories", label: "Categorías", icon: LayersIcon },
   { to: "/estadisticas", label: "Reportes", icon: ChartIcon },
   { to: "/ahorros", label: "Metas de ahorro", icon: TargetIcon },
+  { to: "/deudas", label: "Plan de deudas", icon: CreditCardIcon },
   { to: "/escanear", label: "Escanear boleta", icon: ScanIcon },
 ];
 
