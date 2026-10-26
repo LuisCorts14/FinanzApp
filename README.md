@@ -172,3 +172,7 @@ En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la
 ## Autor
 
 Desarrollado por **Luis Alberto** · [github.com/LuisCorts14](https://github.com/LuisCorts14)
+
+## Licencia
+
+Código bajo licencia [MIT](LICENSE).
