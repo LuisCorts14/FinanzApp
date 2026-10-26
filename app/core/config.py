@@ -43,6 +43,12 @@ class Settings(BaseSettings):
         # Algunos proveedores (Neon/Vercel/Heroku) entregan "postgres://", que SQLAlchemy no acepta.
         return "postgresql://" + value.removeprefix("postgres://") if value.startswith("postgres://") else value
 
+    @field_validator("SMTP_PASSWORD")
+    @classmethod
+    def _without_spaces(cls, value: str) -> str:
+        # Google muestra la contraseña de aplicación en grupos ("abcd efgh ijkl mnop"); se acepta copiada así.
+        return value.replace(" ", "")
+
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip().rstrip("/") for o in self.CORS_ORIGINS.split(",") if o.strip()]
