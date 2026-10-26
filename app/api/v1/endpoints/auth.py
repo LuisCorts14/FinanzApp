@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,7 @@ from app.models.savings_goal import SavingsGoal
 from app.models.transaction import Transaction
 from app.models.transfer import Transfer
 from app.models.user import User
+from app.services import rate_limit as rl
 from app.schemas.user import (
     ChangePasswordRequest,
     DeleteAccountRequest,
@@ -64,7 +65,8 @@ def _utcnow() -> datetime:
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
+def register(user_in: UserCreate, request: Request, db: Session = Depends(get_db)):
+    rl.enforce(db, "register", [(f"ip:{rl.client_ip(request)}", rl.REGISTER_PER_IP)])
     existing = db.scalar(select(User).where(User.email == user_in.email))
     if existing is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
@@ -82,7 +84,15 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+def login(credentials: UserLogin, request: Request, db: Session = Depends(get_db)):
+    rl.enforce(
+        db,
+        "login",
+        [
+            (f"email:{credentials.email.lower()}", rl.LOGIN_PER_EMAIL),
+            (f"ip:{rl.client_ip(request)}", rl.LOGIN_PER_IP),
+        ],
+    )
     invalid_credentials = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
     )
@@ -99,7 +109,15 @@ def read_me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(payload: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    rl.enforce(
+        db,
+        "forgot",
+        [
+            (f"email:{payload.email.lower()}", rl.FORGOT_PER_EMAIL),
+            (f"ip:{rl.client_ip(request)}", rl.FORGOT_PER_IP),
+        ],
+    )
     user = db.scalar(select(User).where(User.email == payload.email))
 
     if user is not None and not user.is_demo:
@@ -119,7 +137,8 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
 
 
 @router.post("/reset-password")
-def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(payload: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    rl.enforce(db, "reset", [(f"ip:{rl.client_ip(request)}", rl.RESET_PER_IP)])
     invalid_token = HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido o expirado"
     )
@@ -175,6 +194,7 @@ def change_password(
     current_user: User = Depends(get_current_user),
 ):
     _forbid_demo(current_user)
+    rl.enforce(db, "sensitive", [(f"user:{current_user.id}", rl.SENSITIVE_PER_USER)])
     if not verify_password(payload.current_password, current_user.hashed_password):
         raise _wrong_password()
     current_user.hashed_password = hash_password(payload.new_password)
@@ -211,6 +231,7 @@ def delete_account(
     current_user: User = Depends(get_current_user),
 ):
     _forbid_demo(current_user)
+    rl.enforce(db, "sensitive", [(f"user:{current_user.id}", rl.SENSITIVE_PER_USER)])
     if not verify_password(payload.password, current_user.hashed_password):
         raise _wrong_password()
     # Las llaves foráneas tienen ON DELETE CASCADE: se borran cuentas, movimientos, categorías y metas.
@@ -219,8 +240,9 @@ def delete_account(
 
 
 @router.post("/demo", response_model=TokenResponse)
-def demo_login(db: Session = Depends(get_db)):
+def demo_login(request: Request, db: Session = Depends(get_db)):
     """Entra a la cuenta demo sin contraseña ("Probar la demo"). Solo si está configurada y marcada como demo."""
+    rl.enforce(db, "demo", [(f"ip:{rl.client_ip(request)}", rl.DEMO_PER_IP)])
     user = db.scalar(select(User).where(User.email == settings.DEMO_EMAIL)) if settings.DEMO_EMAIL else None
     if user is None or not user.is_demo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La demo no está disponible")

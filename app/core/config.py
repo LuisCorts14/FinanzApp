@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173"
     # Email de la cuenta demo pública ("Probar la demo"); vacío = sin demo.
     DEMO_EMAIL: str = ""
+    # Límite de intentos en login, registro, recuperación de contraseña, etc. (los tests lo desactivan).
+    RATE_LIMIT_ENABLED: bool = True
 
     SECRET_KEY: str = "dev-only-secret-change-me"
     JWT_ALGORITHM: str = "HS256"

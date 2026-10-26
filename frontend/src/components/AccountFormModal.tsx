@@ -6,6 +6,7 @@ import type { Account, AccountType } from "../api/types";
 import { formatMoney } from "../utils/format";
 import { ChevronLeftIcon, CloseIcon, SearchIcon, WalletIcon } from "./Icons";
 import InstitutionBadge from "./InstitutionBadge";
+import { apiErrorDetail } from "../utils/apiError";
 
 interface AccountFormModalProps {
   onClose: () => void;
@@ -32,11 +33,6 @@ function normalize(text: string): string {
 function suggestedName(institution: Institution, product: InstitutionProduct): string {
   const brand = institution.name.replace(/^Banco\s+/, "").split(" ")[0];
   return normalize(product.name).includes(normalize(brand)) ? product.name : `${institution.name} · ${product.name}`;
-}
-
-function apiErrorDetail(err: unknown): string | undefined {
-  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
-  return typeof detail === "string" ? detail : undefined;
 }
 
 // Paso inicial al editar: cuentas sin institución quedan como "Efectivo" u "Otra".

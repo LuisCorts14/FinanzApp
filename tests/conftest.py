@@ -18,6 +18,8 @@ if not (make_url(TEST_DATABASE_URL).database or "").endswith("_test"):
 # La configuración se lee al importar la app, así que la URL de prueba se fija antes de cualquier import.
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["RESEND_API_KEY"] = ""
+# Los tests registran muchos usuarios desde la misma "IP"; los límites se prueban aparte en test_rate_limit.py.
+os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

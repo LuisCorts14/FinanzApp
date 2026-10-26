@@ -6,6 +6,7 @@ import DemoButton from "../components/DemoButton";
 import { DEMO_ENABLED } from "../utils/demo";
 import PasswordInput from "../components/PasswordInput";
 import { useAuth } from "../context/AuthContext";
+import { tooManyAttemptsMessage } from "../utils/apiError";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -22,8 +23,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate("/");
-    } catch {
-      setError("Email o contraseña incorrectos.");
+    } catch (err) {
+      setError(tooManyAttemptsMessage(err) ?? "Email o contraseña incorrectos.");
     } finally {
       setSubmitting(false);
     }

@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "../api/auth";
 import AuthLayout from "../components/AuthLayout";
 import PasswordInput from "../components/PasswordInput";
+import { tooManyAttemptsMessage } from "../utils/apiError";
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -30,8 +31,8 @@ export default function ResetPasswordPage() {
       await resetPassword(token, password);
       setSuccess(true);
       setTimeout(() => navigate("/login"), 2000);
-    } catch {
-      setError("El link es inválido o ya expiró. Solicita uno nuevo.");
+    } catch (err) {
+      setError(tooManyAttemptsMessage(err) ?? "El link es inválido o ya expiró. Solicita uno nuevo.");
     } finally {
       setSubmitting(false);
     }

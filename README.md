@@ -23,7 +23,7 @@ Mucha gente no sabe con certeza a dónde se le va el dinero cada mes. Las apps d
 - **Categorías y presupuestos:** cada categoría de gasto puede tener un límite mensual, con una barra que pasa de verde a amarillo (80%) y rojo (excedido).
 - **Metas de ahorro:** abonos y retiros con historial, cuánto apartar por día, semana o mes, un indicador de ritmo ("vas al día", "vas atrasado $X") y un gráfico del ahorro real contra el plan.
 - **Reportes:** tasa de ahorro, estado de los presupuestos, gastos por categoría (barras, círculo o tabla) e ingresos vs. gastos de los últimos 12 meses.
-- **Cuentas de usuario:** registro e inicio de sesión con JWT y recuperación de contraseña por correo. Cada persona ve solo sus datos.
+- **Cuentas de usuario:** registro e inicio de sesión con JWT y recuperación de contraseña por correo. Cada persona ve solo sus datos, y hay un límite de intentos contra quien intente adivinar contraseñas.
 - **Mi perfil:** editar nombre y email (el email pide la contraseña actual), cambiar la contraseña cerrando las sesiones de otros dispositivos, ver un resumen de tus datos y eliminar la cuenta con todo lo asociado.
 - **Configuración:** día de pago (el Dashboard calcula cuánto puedes gastar por día hasta el próximo sueldo), meta de ahorro mensual con una guía 50/30/20, umbral de aviso de los presupuestos y cuenta predeterminada. También permite **exportar todos tus movimientos a CSV** (abre bien en Excel en español).
 - **Notificaciones:** la campana avisa cuando un presupuesto se acerca a su límite o lo supera, cuando gastas más de lo que ganas, cuando una tarjeta usa mucho cupo, cuando una meta va atrasada o se cumple, cuando se acerca tu sueldo y cuando llevas días sin registrar movimientos. Cada aviso lleva a la página donde se resuelve.
@@ -135,7 +135,7 @@ python scripts/demo_account.py           # crea o reinicia la cuenta demo
 
 ## Tests
 
-El backend tiene una suite de **pytest** (81 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
+El backend tiene una suite de **pytest** (89 tests) que recorre la API de punta a punta con `TestClient`: autenticación y recuperación de contraseña, límite de intentos, saldos que siguen a cada movimiento, catálogo de bancos, transferencias (incluyendo distinta moneda), escaneo de boletas (con la llamada a Claude simulada), saldos correctos bajo solicitudes concurrentes, estadísticas, presupuestos, metas de ahorro y aislamiento de datos entre usuarios.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -156,6 +156,7 @@ En cada push, **GitHub Actions** corre las migraciones sobre una base vacía, la
 - **La IA propone, la persona decide.** El escaneo de boletas usa salida estructurada (JSON Schema) y el backend no confía en lo que devuelve el modelo: descarta ids de categorías que no son de esa persona y fechas inválidas. Nada se guarda sin que la persona revise y confirme.
 - **Cambiar la contraseña invalida los tokens anteriores.** Los JWT llevan una versión que se incrementa al cambiar o recuperar la contraseña; un token viejo deja de servir aunque no haya expirado.
 - **Notificaciones calculadas, no guardadas.** Los avisos se calculan al momento a partir de los datos actuales, así nunca quedan desactualizados; solo se guarda cuáles leyó cada persona. La clave de cada aviso incluye su período, para que un presupuesto excedido en noviembre vuelva a avisar aunque se haya leído el de octubre.
+- **Límite de intentos guardado en Postgres.** Login, registro, recuperación de contraseña y la entrada a la demo tienen un tope por email y por IP (por ejemplo, 5 intentos de login por minuto para un mismo email); al superarlo se responde 429 con el tiempo de espera. Los contadores viven en la base de datos y no en memoria porque en Vercel el backend corre en varias instancias que no comparten memoria.
 - **Saldos atómicos.** El saldo se ajusta con `UPDATE ... SET balance = balance + x` en la base de datos, no leyendo y escribiendo desde Python, para no perder actualizaciones cuando llegan varias solicitudes a la vez (un test de concurrencia lo cubre).
 - **El catálogo manda.** Si una cuenta se crea desde un producto del catálogo, el backend fija el tipo y la moneda según el producto, aunque el cliente envíe otros valores. Es una lista mantenida a mano, porque no existe una API pública con los productos bancarios de Chile.
 - **Máximo 3 categorías de ingreso.** Es una decisión de producto: la mayoría de las personas tiene una o dos fuentes de ingreso, y limitar las categorías evita que se desordenen. Los gastos no tienen límite.

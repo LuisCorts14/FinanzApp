@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import PasswordInput from "../components/PasswordInput";
 import { useAuth } from "../context/AuthContext";
+import { apiErrorStatus, tooManyAttemptsMessage } from "../utils/apiError";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -22,8 +23,10 @@ export default function RegisterPage() {
       await register(email, password, fullName);
       navigate("/");
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      setError(status === 409 ? "Ese email ya está registrado." : "No se pudo crear la cuenta.");
+      const status = apiErrorStatus(err);
+      setError(
+        tooManyAttemptsMessage(err) ?? (status === 409 ? "Ese email ya está registrado." : "No se pudo crear la cuenta."),
+      );
     } finally {
       setSubmitting(false);
     }

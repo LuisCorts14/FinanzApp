@@ -3,20 +3,27 @@ import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../api/auth";
 import AuthLayout from "../components/AuthLayout";
+import { tooManyAttemptsMessage } from "../utils/apiError";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setError(null);
     setSubmitting(true);
     try {
       await forgotPassword(email);
+      setSent(true);
+    } catch (err) {
+      const blocked = tooManyAttemptsMessage(err);
+      if (blocked) setError(blocked);
+      else setSent(true); // la respuesta no revela si el email existe
     } finally {
       setSubmitting(false);
-      setSent(true);
     }
   }
 
@@ -44,6 +51,7 @@ export default function ForgotPasswordPage() {
               autoFocus
             />
           </label>
+          {error && <p className="error">{error}</p>}
           <button type="submit" className="button-block" disabled={submitting}>
             {submitting ? "Enviando..." : "Enviar link de recuperación"}
           </button>

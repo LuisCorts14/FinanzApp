@@ -4,12 +4,8 @@ import { changePassword, deleteMyAccount, getMySummary, updateMe } from "../api/
 import type { UserSummary } from "../api/auth";
 import PasswordInput from "../components/PasswordInput";
 import { useAuth } from "../context/AuthContext";
+import { apiErrorDetail } from "../utils/apiError";
 import { getInitials } from "../utils/user";
-
-function apiErrorDetail(err: unknown): string | undefined {
-  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
-  return typeof detail === "string" ? detail : undefined;
-}
 
 function memberSince(createdAt: string): string {
   return new Date(createdAt).toLocaleDateString("es-CL", { month: "long", year: "numeric" }).replace(" de ", " ");
