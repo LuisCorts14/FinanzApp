@@ -8,7 +8,6 @@ import base64
 import json
 from datetime import date
 
-import anthropic
 from pydantic import BaseModel, ValidationError
 
 from app.core.config import settings
@@ -98,7 +97,10 @@ def extract_receipt(image: bytes, media_type: str, categories: list[tuple[int, s
     if not settings.ANTHROPIC_API_KEY:
         raise ReceiptServiceUnavailable("El escaneo de boletas no está configurado en este servidor.")
 
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY, timeout=90.0)
+    # Import diferido: el SDK tarda ~2 s en cargar y solo se usa aquí; así no frena cada arranque en frío.
+    import anthropic
+
+    client =anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY, timeout=90.0)
     request = dict(
         model=settings.RECEIPT_MODEL,
         max_tokens=16000,

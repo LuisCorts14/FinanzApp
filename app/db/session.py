@@ -1,14 +1,15 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
-# En funciones serverless cada instancia vive poco: mejor no mantener un pool propio (Neon ya trae uno).
+# En Vercel una instancia atiende muchos requests seguidos (y en paralelo): reusar conexiones evita repetir
+# el handshake TLS + autenticación con Neon en cada uno. Pool chico porque el pooler de Neon ya multiplexa;
+# pool_recycle bajo porque Neon cierra las conexiones inactivas, y pool_pre_ping descarta las que murieron.
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
-    **({"poolclass": NullPool} if settings.is_serverless else {}),
+    **({"pool_size": 3, "max_overflow": 7, "pool_recycle": 240} if settings.is_serverless else {}),
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

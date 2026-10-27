@@ -1,6 +1,7 @@
 import json
 from types import SimpleNamespace
 
+import anthropic
 import pytest
 
 from app.core.config import settings
@@ -147,7 +148,7 @@ def install_fake_client(monkeypatch, response):
     """Cliente falso con las dos rutas: messages (normal) y beta.messages (con fallbacks)."""
     standard, beta = FakeMessages(response), FakeMessages(response)
     fake_client = SimpleNamespace(messages=standard, beta=SimpleNamespace(messages=beta))
-    monkeypatch.setattr(receipt_scanner.anthropic, "Anthropic", lambda **kw: fake_client)
+    monkeypatch.setattr(anthropic, "Anthropic", lambda **kw: fake_client)
     return SimpleNamespace(standard=standard, beta=beta)
 
 
