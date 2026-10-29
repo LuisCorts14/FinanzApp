@@ -34,10 +34,28 @@ export default function ForgotPasswordPage() {
       footer={<Link to="/login">← Volver a iniciar sesión</Link>}
     >
       {sent ? (
-        <div className="auth-notice">
-          Si <strong>{email}</strong> está registrado, te llegará un correo con un link para restablecer tu contraseña.
-          El link dura 30 minutos.
-        </div>
+        <>
+          <div className="auth-notice">
+            Si hay una cuenta con <strong>{email}</strong>, te llegará en unos minutos un correo con un link para
+            crear una nueva contraseña. El link dura 30 minutos.
+          </div>
+          {/* Ayuda para quien no recibe el correo, sin revelar si el email está registrado. */}
+          <div className="auth-help">
+            <p className="auth-help-title">¿No te llega?</p>
+            <ul>
+              <li>Revisa la carpeta de spam o promociones.</li>
+              <li>
+                Confirma que sea el correo con el que te registraste.{" "}
+                <button type="button" className="auth-help-link" onClick={() => setSent(false)}>
+                  Probar con otro correo
+                </button>
+              </li>
+              <li>
+                ¿Aún no tienes cuenta? <Link to="/register">Crea una gratis</Link>
+              </li>
+            </ul>
+          </div>
+        </>
       ) : (
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>

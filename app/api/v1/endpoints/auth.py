@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -109,7 +109,12 @@ def read_me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
+def forgot_password(
+    payload: ForgotPasswordRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     rl.enforce(
         db,
         "forgot",
@@ -131,7 +136,9 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request, db: Sessio
         db.commit()
 
         reset_link = f"{settings.FRONTEND_URL}/reset-password?token={raw_token}"
-        send_password_reset_email(user.email, reset_link)
+        # Se envía después de responder: si el envío (1-2 s por SMTP) fuera antes, el tiempo de respuesta
+        # delataría qué correos están registrados aunque el mensaje sea el mismo.
+        background_tasks.add_task(send_password_reset_email, user.email, reset_link)
 
     return {"detail": "Si el email existe, se envió un link de recuperación."}
 

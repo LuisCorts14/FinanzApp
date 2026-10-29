@@ -2448,6 +2448,36 @@ button:disabled {
   background: #fdf0dc;
 }
 
+.auth-help {
+  margin-top: 16px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.auth-help-title {
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.auth-help ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.auth-help-link {
+  background: none;
+  padding: 0;
+  color: var(--primary);
+  font-weight: 500;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
 .password-field {
   position: relative;
   display: block;
