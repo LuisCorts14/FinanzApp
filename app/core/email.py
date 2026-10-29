@@ -72,19 +72,26 @@ def _send_resend(to_email: str, reset_link: str) -> None:
     response.raise_for_status()
 
 
+def email_provider() -> str:
+    """Método de envío configurado: "smtp", "resend" o "ninguno". Lo muestra /health-check (sin credenciales)."""
+    if settings.SMTP_USER and settings.SMTP_PASSWORD:
+        return "smtp"
+    if settings.RESEND_API_KEY:
+        return "resend"
+    return "ninguno"
+
+
 def send_password_reset_email(to_email: str, reset_link: str) -> None:
     """Si el envío falla, se registra en el log y no se lanza el error.
 
     La respuesta de "recuperar contraseña" es siempre la misma (no revela si el email existe),
     así que un error 500 solo filtraría información sin ayudar a la persona.
     """
-    if settings.SMTP_USER and settings.SMTP_PASSWORD:
-        send = _send_smtp
-    elif settings.RESEND_API_KEY:
-        send = _send_resend
-    else:
+    provider = email_provider()
+    if provider == "ninguno":
         print(f"[DEV] Correo no configurado. Link de recuperación para {to_email}: {reset_link}")
         return
+    send = _send_smtp if provider == "smtp" else _send_resend
 
     try:
         send(to_email, reset_link)

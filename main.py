@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.core.email import email_provider
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -26,4 +27,5 @@ def root():
 
 @app.get("/health-check")
 def health_check():
-    return {"status": "ok"}
+    # "email" dice solo qué método de envío hay configurado, para detectar un deploy sin credenciales.
+    return {"status": "ok", "email": email_provider()}

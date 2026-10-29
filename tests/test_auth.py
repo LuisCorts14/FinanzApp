@@ -86,3 +86,27 @@ def test_forgot_password_takes_the_same_minimum_time_either_way(client, make_use
 def test_reset_with_invalid_token_fails(client):
     resp = client.post("/api/v1/auth/reset-password", json={"token": "inventado", "new_password": "nueva1234"})
     assert resp.status_code == 400
+
+
+def test_emails_are_matched_without_case(client, make_user, sent_emails):
+    make_user("Ana@Example.com", password="secreta123")
+
+    login = client.post("/api/v1/auth/login", json={"email": "ana@example.com", "password": "secreta123"})
+    assert login.status_code == 200
+
+    dup = client.post("/api/v1/auth/register", json={"email": "ANA@example.com", "password": "otra12345"})
+    assert dup.status_code == 409
+
+    client.post("/api/v1/auth/forgot-password", json={"email": "ana@EXAMPLE.com"})
+    # Llega al email de la cuenta (EmailStr puede normalizar el dominio a minúsculas).
+    assert [to.lower() for to, _ in sent_emails] == ["ana@example.com"]
+
+
+def test_health_check_reports_the_email_method_without_secrets(client, monkeypatch):
+    assert client.get("/health-check").json() == {"status": "ok", "email": "ninguno"}
+
+    monkeypatch.setattr(settings, "SMTP_USER", "finanzapp@gmail.com")
+    monkeypatch.setattr(settings, "SMTP_PASSWORD", "secreto")
+    body = client.get("/health-check").json()
+    assert body["email"] == "smtp"
+    assert "secreto" not in str(body) and "finanzapp@gmail.com" not in str(body)

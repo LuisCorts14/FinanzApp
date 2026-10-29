@@ -60,6 +60,11 @@ def _forbid_demo(user: User) -> None:
         )
 
 
+def _same_email(email: str):
+    """Compara emails sin distinguir mayúsculas: "Ana@Gmail.com" y "ana@gmail.com" son la misma cuenta."""
+    return func.lower(User.email) == email.lower()
+
+
 def _utcnow() -> datetime:
     # La columna guarda fechas UTC sin zona horaria.
     return datetime.now(UTC).replace(tzinfo=None)
@@ -68,7 +73,7 @@ def _utcnow() -> datetime:
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(user_in: UserCreate, request: Request, db: Session = Depends(get_db)):
     rl.enforce(db, "register", [(f"ip:{rl.client_ip(request)}", rl.REGISTER_PER_IP)])
-    existing = db.scalar(select(User).where(User.email == user_in.email))
+    existing = db.scalar(select(User).where(_same_email(user_in.email)))
     if existing is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
@@ -97,7 +102,7 @@ def login(credentials: UserLogin, request: Request, db: Session = Depends(get_db
     invalid_credentials = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
     )
-    user = db.scalar(select(User).where(User.email == credentials.email))
+    user = db.scalar(select(User).where(_same_email(credentials.email)))
     if user is None or not verify_password(credentials.password, user.hashed_password):
         raise invalid_credentials
 
@@ -120,7 +125,7 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request, db: Sessio
             (f"ip:{rl.client_ip(request)}", rl.FORGOT_PER_IP),
         ],
     )
-    user = db.scalar(select(User).where(User.email == payload.email))
+    user = db.scalar(select(User).where(_same_email(payload.email)))
 
     if user is not None and not user.is_demo:
         raw_token = generate_reset_token()
