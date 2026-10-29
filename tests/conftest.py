@@ -21,6 +21,8 @@ os.environ["RESEND_API_KEY"] = ""
 os.environ["SMTP_PASSWORD"] = ""  # los tests nunca envían correos reales
 # Los tests registran muchos usuarios desde la misma "IP"; los límites se prueban aparte en test_rate_limit.py.
 os.environ["RATE_LIMIT_ENABLED"] = "false"
+# La espera mínima de "recuperar contraseña" se prueba aparte en test_auth.py.
+os.environ["FORGOT_PASSWORD_MIN_SECONDS"] = "0"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

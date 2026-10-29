@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "FinanzApp <onboarding@resend.dev>"
+    # "Recuperar contraseña" tarda al menos esto exista o no el email, para que el tiempo del envío
+    # (1-2 s por SMTP) no delate qué cuentas existen. Debe superar lo que suele tardar un envío.
+    FORGOT_PASSWORD_MIN_SECONDS: float = 3.0
 
     # Escaneo de boletas con Claude: sin API key, la función queda desactivada.
     ANTHROPIC_API_KEY: str = ""

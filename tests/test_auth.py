@@ -1,4 +1,7 @@
+import time
 from urllib.parse import parse_qs, urlparse
+
+from app.core.config import settings
 
 
 def test_register_returns_token_and_user(client):
@@ -63,6 +66,21 @@ def test_forgot_password_does_not_reveal_unknown_emails(client, sent_emails):
     resp = client.post("/api/v1/auth/forgot-password", json={"email": "nadie@example.com"})
     assert resp.status_code == 200
     assert sent_emails == []
+
+
+def test_forgot_password_takes_the_same_minimum_time_either_way(client, make_user, sent_emails, monkeypatch):
+    monkeypatch.setattr(settings, "FORGOT_PASSWORD_MIN_SECONDS", 0.3)
+    make_user("ana@example.com")
+
+    for email in ("ana@example.com", "nadie@example.com"):
+        start = time.monotonic()
+        resp = client.post("/api/v1/auth/forgot-password", json={"email": email})
+        assert resp.status_code == 200
+        # Margen por la resolución del reloj (en Windows, ~15 ms).
+        assert time.monotonic() - start >= 0.25
+
+    # El correo se envía antes de responder (no en segundo plano).
+    assert [to for to, _ in sent_emails] == ["ana@example.com"]
 
 
 def test_reset_with_invalid_token_fails(client):
